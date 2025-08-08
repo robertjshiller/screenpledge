@@ -1,0 +1,103 @@
+Performing hot reload...
+Syncing files to device sdk gphone64 x86 64...
+lib/features/onboarding_pre/presentation/views/free_trial_explained_page.dart:150:70: Error: String starting with ' must end with '.
+          subtitle: 'We'll send a heads-up that your trial is ending.',
+                                                                     ^^
+lib/features/onboarding_pre/presentation/views/free_trial_explained_page.dart:150:25: Error: Expected ',' before this.
+          subtitle: 'We'll send a heads-up that your trial is ending.',
+                        ^^
+lib/features/onboarding_pre/presentation/views/free_trial_explained_page.dart:150:28: Error: Expected ',' before this.
+          subtitle: 'We'll send a heads-up that your trial is ending.',
+                           ^^^^
+lib/features/onboarding_pre/presentation/views/free_trial_explained_page.dart:150:33: Error: Expected ',' before this.
+          subtitle: 'We'll send a heads-up that your trial is ending.',
+                                ^
+lib/features/onboarding_pre/presentation/views/free_trial_explained_page.dart:150:35: Error: Expected ',' before this.
+          subtitle: 'We'll send a heads-up that your trial is ending.',
+                                  ^^^^^
+lib/features/onboarding_pre/presentation/views/free_trial_explained_page.dart:150:44: Error: Expected ',' before this.
+          subtitle: 'We'll send a heads-up that your trial is ending.',
+                                           ^^^^
+lib/features/onboarding_pre/presentation/views/free_trial_explained_page.dart:150:49: Error: Expected ',' before this.
+          subtitle: 'We'll send a heads-up that your trial is ending.',
+                                                ^^^^
+lib/features/onboarding_pre/presentation/views/free_trial_explained_page.dart:150:54: Error: Expected ',' before this.
+          subtitle: 'We'll send a heads-up that your trial is ending.',
+                                                     ^^^^^
+lib/features/onboarding_pre/presentation/views/free_trial_explained_page.dart:150:70: Error: Expected a type, but got '',''.
+          subtitle: 'We'll send a heads-up that your trial is ending.',
+                                                                     ^^
+Unhandled exception:
+Crash when compiling file:///C:/Users/brian/screenpledge/lib/features/onboarding_pre/presentation/views/free_trial_explained_page.dart at character offset 5622:
+lib/features/onboarding_pre/presentation/views/free_trial_explained_page.dart: Internal problem: Unhandled ParserRecovery in handleType.
+
+#0      internalProblem (package:front_end/src/base/problems.dart:50)
+#1      unhandled (package:front_end/src/base/problems.dart:71)
+#2      BodyBuilder.handleType (package:front_end/src/kernel/body_builder.dart:5073)
+#3      ComplexTypeInfo.parseType (package:_fe_analyzer_shared/src/parser/type_info_impl.dart:669)
+#4      ComplexTypeInfo.ensureTypeOrVoid (package:_fe_analyzer_shared/src/parser/type_info_impl.dart:604)
+#5      Parser.parseIsOperatorRest (package:_fe_analyzer_shared/src/parser/parser_impl.dart:7890)
+#6      Parser._parsePrecedenceExpressionLoop (package:_fe_analyzer_shared/src/parser/parser_impl.dart:6055)
+#7      Parser.parsePrecedenceExpression (package:_fe_analyzer_shared/src/parser/parser_impl.dart:5892)
+#8      Parser.parseExpression (package:_fe_analyzer_shared/src/parser/parser_impl.dart:5772)
+#9      Parser.parseArgumentsRest (package:_fe_analyzer_shared/src/parser/parser_impl.dart:7846)
+#10     Parser.parseArguments (package:_fe_analyzer_shared/src/parser/parser_impl.dart:7821)
+#11     Parser.parseArgumentsOpt (package:_fe_analyzer_shared/src/parser/parser_impl.dart:7802)
+#12     Parser.parseSend (package:_fe_analyzer_shared/src/parser/parser_impl.dart:7741)
+#13     Parser.parseSendOrFunctionLiteral (package:_fe_analyzer_shared/src/parser/parser_impl.dart:7233)
+#14     Parser.parsePrimary (package:_fe_analyzer_shared/src/parser/parser_impl.dart:6551)
+#15     Parser.parseUnaryExpression (package:_fe_analyzer_shared/src/parser/parser_impl.dart:6442)
+#16     Parser.parsePrecedenceExpression (package:_fe_analyzer_shared/src/parser/parser_impl.dart:5856)
+#17     Parser.parseExpression (package:_fe_analyzer_shared/src/parser/parser_impl.dart:5772)
+#18     Parser.parseLiteralListSuffix (package:_fe_analyzer_shared/src/parser/parser_impl.dart:6944)
+#19     Parser.parsePrimary (package:_fe_analyzer_shared/src/parser/parser_impl.dart:6664)
+#20     Parser.parseUnaryExpression (package:_fe_analyzer_shared/src/parser/parser_impl.dart:6442)
+#21     Parser.parsePrecedenceExpression (package:_fe_analyzer_shared/src/parser/parser_impl.dart:5856)
+#22     Parser.parseExpression (package:_fe_analyzer_shared/src/parser/parser_impl.dart:5772)
+#23     Parser.parseArgumentsRest (package:_fe_analyzer_shared/src/parser/parser_impl.dart:7846)
+#24     Parser.parseArguments (package:_fe_analyzer_shared/src/parser/parser_impl.dart:7821)
+#25     Parser.parseArgumentsOpt (package:_fe_analyzer_shared/src/parser/parser_impl.dart:7802)
+#26     Parser.parseSend (package:_fe_analyzer_shared/src/parser/parser_impl.dart:7741)
+#27     Parser.parseSendOrFunctionLiteral (package:_fe_analyzer_shared/src/parser/parser_impl.dart:7233)
+#28     Parser.parsePrimary (package:_fe_analyzer_shared/src/parser/parser_impl.dart:6551)
+#29     Parser.parseUnaryExpression (package:_fe_analyzer_shared/src/parser/parser_impl.dart:6442)
+#30     Parser.parsePrecedenceExpression (package:_fe_analyzer_shared/src/parser/parser_impl.dart:5856)
+#31     Parser.parseExpression (package:_fe_analyzer_shared/src/parser/parser_impl.dart:5772)
+#32     Parser.parseReturnStatement (package:_fe_analyzer_shared/src/parser/parser_impl.dart:5671)
+#33     Parser.parseStatementX (package:_fe_analyzer_shared/src/parser/parser_impl.dart:5547)
+#34     Parser.parseStatement (package:_fe_analyzer_shared/src/parser/parser_impl.dart:5520)
+#35     Parser.parseFunctionBody (package:_fe_analyzer_shared/src/parser/parser_impl.dart:5425)
+#36     DietListener.buildFunctionBody (package:front_end/src/source/diet_listener.dart:1281)
+#37     DietListener._endClassMethod (package:front_end/src/source/diet_listener.dart:807)
+#38     DietListener.endClassMethod (package:front_end/src/source/diet_listener.dart:735)
+#39     Parser.parseMethod (package:_fe_analyzer_shared/src/parser/parser_impl.dart:5005)
+#40     Parser.parseClassOrMixinOrExtensionOrEnumMemberImpl (package:_fe_analyzer_shared/src/parser/parser_impl.dart:4701)
+#41     Parser.parseClassOrMixinOrExtensionBody (package:_fe_analyzer_shared/src/parser/parser_impl.dart:4326)
+#42     Parser.parseClass (package:_fe_analyzer_shared/src/parser/parser_impl.dart:2723)
+#43     Parser.parseClassOrNamedMixinApplication (package:_fe_analyzer_shared/src/parser/parser_impl.dart:2681)
+#44     Parser._handleModifiersForClassDeclaration (package:_fe_analyzer_shared/src/parser/parser_impl.dart:835)
+#45     Parser.parseTopLevelKeywordDeclaration (package:_fe_analyzer_shared/src/parser/parser_impl.dart:660)
+#46     Parser.parseTopLevelDeclarationImpl (package:_fe_analyzer_shared/src/parser/parser_impl.dart:533)
+#47     Parser.parseUnit (package:_fe_analyzer_shared/src/parser/parser_impl.dart:411)
+#48     SourceLoader.buildBody (package:front_end/src/source/source_loader.dart:1240)
+<asynchronous suspension>
+#49     SourceLoader.buildBodies (package:front_end/src/source/source_loader.dart:768)
+<asynchronous suspension>
+#50     KernelTarget.buildComponent.<anonymous closure> (package:front_end/src/kernel/kernel_target.dart:651)
+<asynchronous suspension>
+#51     withCrashReporting (package:front_end/src/base/crash.dart:139)
+<asynchronous suspension>
+#52     KernelTarget.buildComponent (package:front_end/src/kernel/kernel_target.dart:645)
+<asynchronous suspension>
+#53     IncrementalCompiler.computeDelta.<anonymous closure> (package:front_end/src/base/incremental_compiler.dart:377)
+<asynchronous suspension>
+#54     CompilerContext.clear (package:front_end/src/base/compiler_context.dart:77)
+<asynchronous suspension>
+#55     IncrementalCompiler.compile (package:vm/incremental_compiler.dart:86)
+<asynchronous suspension>
+#56     FrontendCompiler.recompileDelta (package:frontend_server/frontend_server.dart:1031)
+<asynchronous suspension>
+#57     listenAndCompile.<anonymous closure> (package:frontend_server/frontend_server.dart:1497)
+<asynchronous suspension>
+the Dart compiler exited unexpectedly.
+the Dart compiler exited unexpectedly.
