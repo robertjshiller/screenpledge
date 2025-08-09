@@ -48,10 +48,10 @@ class _HowItWorksSequenceState extends State<HowItWorksSequence> {
     setState(() {
       if (_sequence > 0) {
         _sequence--;
+
       }
     });
   }
-
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;

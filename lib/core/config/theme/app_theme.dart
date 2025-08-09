@@ -1,6 +1,3 @@
-
-// lib/core/config/theme/app_theme.dart
-
 import 'package:flutter/material.dart';
 import 'package:screenpledge/core/config/theme/app_colors.dart';
 
@@ -15,7 +12,7 @@ import 'package:screenpledge/core/config/theme/app_colors.dart';
 ///
 /// The theme is accessed via the static `themeData` getter.
 ///
-/// Example (in main.dart):
+/// Example:
 /// ```dart
 /// MaterialApp(
 ///   title: 'ScreenPledge',
@@ -77,6 +74,13 @@ class AppTheme {
       headlineMedium: TextStyle(
         fontFamily: 'Open Sans',
         fontSize: 24.0,
+        fontWeight: FontWeight.bold, // Header = Bold
+        color: AppColors.primaryText,
+      ),
+      // For smaller headlines, often used for subheadings or important labels
+      headlineSmall: TextStyle(
+        fontFamily: 'Open Sans',
+        fontSize: 20.0,
         fontWeight: FontWeight.bold, // Header = Bold
         color: AppColors.primaryText,
       ),

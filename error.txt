@@ -1,103 +1,417 @@
-Performing hot reload...
-Syncing files to device sdk gphone64 x86 64...
-lib/features/onboarding_pre/presentation/views/free_trial_explained_page.dart:150:70: Error: String starting with ' must end with '.
-          subtitle: 'We'll send a heads-up that your trial is ending.',
-                                                                     ^^
-lib/features/onboarding_pre/presentation/views/free_trial_explained_page.dart:150:25: Error: Expected ',' before this.
-          subtitle: 'We'll send a heads-up that your trial is ending.',
-                        ^^
-lib/features/onboarding_pre/presentation/views/free_trial_explained_page.dart:150:28: Error: Expected ',' before this.
-          subtitle: 'We'll send a heads-up that your trial is ending.',
-                           ^^^^
-lib/features/onboarding_pre/presentation/views/free_trial_explained_page.dart:150:33: Error: Expected ',' before this.
-          subtitle: 'We'll send a heads-up that your trial is ending.',
-                                ^
-lib/features/onboarding_pre/presentation/views/free_trial_explained_page.dart:150:35: Error: Expected ',' before this.
-          subtitle: 'We'll send a heads-up that your trial is ending.',
-                                  ^^^^^
-lib/features/onboarding_pre/presentation/views/free_trial_explained_page.dart:150:44: Error: Expected ',' before this.
-          subtitle: 'We'll send a heads-up that your trial is ending.',
-                                           ^^^^
-lib/features/onboarding_pre/presentation/views/free_trial_explained_page.dart:150:49: Error: Expected ',' before this.
-          subtitle: 'We'll send a heads-up that your trial is ending.',
-                                                ^^^^
-lib/features/onboarding_pre/presentation/views/free_trial_explained_page.dart:150:54: Error: Expected ',' before this.
-          subtitle: 'We'll send a heads-up that your trial is ending.',
-                                                     ^^^^^
-lib/features/onboarding_pre/presentation/views/free_trial_explained_page.dart:150:70: Error: Expected a type, but got '',''.
-          subtitle: 'We'll send a heads-up that your trial is ending.',
-                                                                     ^^
-Unhandled exception:
-Crash when compiling file:///C:/Users/brian/screenpledge/lib/features/onboarding_pre/presentation/views/free_trial_explained_page.dart at character offset 5622:
-lib/features/onboarding_pre/presentation/views/free_trial_explained_page.dart: Internal problem: Unhandled ParserRecovery in handleType.
-
-#0      internalProblem (package:front_end/src/base/problems.dart:50)
-#1      unhandled (package:front_end/src/base/problems.dart:71)
-#2      BodyBuilder.handleType (package:front_end/src/kernel/body_builder.dart:5073)
-#3      ComplexTypeInfo.parseType (package:_fe_analyzer_shared/src/parser/type_info_impl.dart:669)
-#4      ComplexTypeInfo.ensureTypeOrVoid (package:_fe_analyzer_shared/src/parser/type_info_impl.dart:604)
-#5      Parser.parseIsOperatorRest (package:_fe_analyzer_shared/src/parser/parser_impl.dart:7890)
-#6      Parser._parsePrecedenceExpressionLoop (package:_fe_analyzer_shared/src/parser/parser_impl.dart:6055)
-#7      Parser.parsePrecedenceExpression (package:_fe_analyzer_shared/src/parser/parser_impl.dart:5892)
-#8      Parser.parseExpression (package:_fe_analyzer_shared/src/parser/parser_impl.dart:5772)
-#9      Parser.parseArgumentsRest (package:_fe_analyzer_shared/src/parser/parser_impl.dart:7846)
-#10     Parser.parseArguments (package:_fe_analyzer_shared/src/parser/parser_impl.dart:7821)
-#11     Parser.parseArgumentsOpt (package:_fe_analyzer_shared/src/parser/parser_impl.dart:7802)
-#12     Parser.parseSend (package:_fe_analyzer_shared/src/parser/parser_impl.dart:7741)
-#13     Parser.parseSendOrFunctionLiteral (package:_fe_analyzer_shared/src/parser/parser_impl.dart:7233)
-#14     Parser.parsePrimary (package:_fe_analyzer_shared/src/parser/parser_impl.dart:6551)
-#15     Parser.parseUnaryExpression (package:_fe_analyzer_shared/src/parser/parser_impl.dart:6442)
-#16     Parser.parsePrecedenceExpression (package:_fe_analyzer_shared/src/parser/parser_impl.dart:5856)
-#17     Parser.parseExpression (package:_fe_analyzer_shared/src/parser/parser_impl.dart:5772)
-#18     Parser.parseLiteralListSuffix (package:_fe_analyzer_shared/src/parser/parser_impl.dart:6944)
-#19     Parser.parsePrimary (package:_fe_analyzer_shared/src/parser/parser_impl.dart:6664)
-#20     Parser.parseUnaryExpression (package:_fe_analyzer_shared/src/parser/parser_impl.dart:6442)
-#21     Parser.parsePrecedenceExpression (package:_fe_analyzer_shared/src/parser/parser_impl.dart:5856)
-#22     Parser.parseExpression (package:_fe_analyzer_shared/src/parser/parser_impl.dart:5772)
-#23     Parser.parseArgumentsRest (package:_fe_analyzer_shared/src/parser/parser_impl.dart:7846)
-#24     Parser.parseArguments (package:_fe_analyzer_shared/src/parser/parser_impl.dart:7821)
-#25     Parser.parseArgumentsOpt (package:_fe_analyzer_shared/src/parser/parser_impl.dart:7802)
-#26     Parser.parseSend (package:_fe_analyzer_shared/src/parser/parser_impl.dart:7741)
-#27     Parser.parseSendOrFunctionLiteral (package:_fe_analyzer_shared/src/parser/parser_impl.dart:7233)
-#28     Parser.parsePrimary (package:_fe_analyzer_shared/src/parser/parser_impl.dart:6551)
-#29     Parser.parseUnaryExpression (package:_fe_analyzer_shared/src/parser/parser_impl.dart:6442)
-#30     Parser.parsePrecedenceExpression (package:_fe_analyzer_shared/src/parser/parser_impl.dart:5856)
-#31     Parser.parseExpression (package:_fe_analyzer_shared/src/parser/parser_impl.dart:5772)
-#32     Parser.parseReturnStatement (package:_fe_analyzer_shared/src/parser/parser_impl.dart:5671)
-#33     Parser.parseStatementX (package:_fe_analyzer_shared/src/parser/parser_impl.dart:5547)
-#34     Parser.parseStatement (package:_fe_analyzer_shared/src/parser/parser_impl.dart:5520)
-#35     Parser.parseFunctionBody (package:_fe_analyzer_shared/src/parser/parser_impl.dart:5425)
-#36     DietListener.buildFunctionBody (package:front_end/src/source/diet_listener.dart:1281)
-#37     DietListener._endClassMethod (package:front_end/src/source/diet_listener.dart:807)
-#38     DietListener.endClassMethod (package:front_end/src/source/diet_listener.dart:735)
-#39     Parser.parseMethod (package:_fe_analyzer_shared/src/parser/parser_impl.dart:5005)
-#40     Parser.parseClassOrMixinOrExtensionOrEnumMemberImpl (package:_fe_analyzer_shared/src/parser/parser_impl.dart:4701)
-#41     Parser.parseClassOrMixinOrExtensionBody (package:_fe_analyzer_shared/src/parser/parser_impl.dart:4326)
-#42     Parser.parseClass (package:_fe_analyzer_shared/src/parser/parser_impl.dart:2723)
-#43     Parser.parseClassOrNamedMixinApplication (package:_fe_analyzer_shared/src/parser/parser_impl.dart:2681)
-#44     Parser._handleModifiersForClassDeclaration (package:_fe_analyzer_shared/src/parser/parser_impl.dart:835)
-#45     Parser.parseTopLevelKeywordDeclaration (package:_fe_analyzer_shared/src/parser/parser_impl.dart:660)
-#46     Parser.parseTopLevelDeclarationImpl (package:_fe_analyzer_shared/src/parser/parser_impl.dart:533)
-#47     Parser.parseUnit (package:_fe_analyzer_shared/src/parser/parser_impl.dart:411)
-#48     SourceLoader.buildBody (package:front_end/src/source/source_loader.dart:1240)
-<asynchronous suspension>
-#49     SourceLoader.buildBodies (package:front_end/src/source/source_loader.dart:768)
-<asynchronous suspension>
-#50     KernelTarget.buildComponent.<anonymous closure> (package:front_end/src/kernel/kernel_target.dart:651)
-<asynchronous suspension>
-#51     withCrashReporting (package:front_end/src/base/crash.dart:139)
-<asynchronous suspension>
-#52     KernelTarget.buildComponent (package:front_end/src/kernel/kernel_target.dart:645)
-<asynchronous suspension>
-#53     IncrementalCompiler.computeDelta.<anonymous closure> (package:front_end/src/base/incremental_compiler.dart:377)
-<asynchronous suspension>
-#54     CompilerContext.clear (package:front_end/src/base/compiler_context.dart:77)
-<asynchronous suspension>
-#55     IncrementalCompiler.compile (package:vm/incremental_compiler.dart:86)
-<asynchronous suspension>
-#56     FrontendCompiler.recompileDelta (package:frontend_server/frontend_server.dart:1031)
-<asynchronous suspension>
-#57     listenAndCompile.<anonymous closure> (package:frontend_server/frontend_server.dart:1497)
-<asynchronous suspension>
-the Dart compiler exited unexpectedly.
-the Dart compiler exited unexpectedly.
+[{
+	"resource": "/C:/Users/brian/screenpledge/lib/features/dashboard/presentation/views/dashboard_page.dart",
+	"owner": "_generated_diagnostic_collection_name_#1",
+	"code": "const_method",
+	"severity": 8,
+	"message": "Getters, setters and methods can't be declared to be 'const'.\nTry removing the 'const' keyword.",
+	"source": "dart",
+	"startLineNumber": 9,
+	"startColumn": 3,
+	"endLineNumber": 9,
+	"endColumn": 8,
+	"modelVersionId": 1
+},{
+	"resource": "/C:/Users/brian/screenpledge/lib/features/dashboard/presentation/views/dashboard_page.dart",
+	"owner": "_generated_diagnostic_collection_name_#1",
+	"code": {
+		"value": "concrete_class_with_abstract_member",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/concrete_class_with_abstract_member",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 8,
+	"message": "'DashboardPledgePendingPage' must have a method body because 'DashboardPage' isn't abstract.\nTry making 'DashboardPage' abstract, or adding a body to 'DashboardPledgePendingPage'.",
+	"source": "dart",
+	"startLineNumber": 9,
+	"startColumn": 9,
+	"endLineNumber": 9,
+	"endColumn": 49,
+	"modelVersionId": 1
+},{
+	"resource": "/C:/Users/brian/screenpledge/lib/features/dashboard/presentation/views/dashboard_page.dart",
+	"owner": "_generated_diagnostic_collection_name_#1",
+	"code": {
+		"value": "invalid_super_formal_parameter_location",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/invalid_super_formal_parameter_location",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 8,
+	"message": "Super parameters can only be used in non-redirecting generative constructors.\nTry removing the 'super' modifier, or changing the constructor to be non-redirecting and generative.",
+	"source": "dart",
+	"startLineNumber": 9,
+	"startColumn": 37,
+	"endLineNumber": 9,
+	"endColumn": 42,
+	"modelVersionId": 1
+},{
+	"resource": "/C:/Users/brian/screenpledge/lib/features/dashboard/presentation/views/dashboard_page.dart",
+	"owner": "_generated_diagnostic_collection_name_#1",
+	"code": "expected_token",
+	"severity": 8,
+	"message": "Expected to find ','.",
+	"source": "dart",
+	"startLineNumber": 52,
+	"startColumn": 36,
+	"endLineNumber": 52,
+	"endColumn": 38,
+	"modelVersionId": 1
+},{
+	"resource": "/C:/Users/brian/screenpledge/lib/features/dashboard/presentation/views/dashboard_page.dart",
+	"owner": "_generated_diagnostic_collection_name_#1",
+	"code": {
+		"value": "extra_positional_arguments_could_be_named",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/extra_positional_arguments_could_be_named",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 8,
+	"message": "Too many positional arguments: 1 expected, but 9 found.\nTry removing the extra positional arguments, or specifying the name for named arguments.",
+	"source": "dart",
+	"startLineNumber": 52,
+	"startColumn": 36,
+	"endLineNumber": 52,
+	"endColumn": 38,
+	"modelVersionId": 1
+},{
+	"resource": "/C:/Users/brian/screenpledge/lib/features/dashboard/presentation/views/dashboard_page.dart",
+	"owner": "_generated_diagnostic_collection_name_#1",
+	"code": {
+		"value": "undefined_identifier",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/undefined_identifier",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 8,
+	"message": "Undefined name 'll'.\nTry correcting the name to one that is defined, or defining the name.",
+	"source": "dart",
+	"startLineNumber": 52,
+	"startColumn": 36,
+	"endLineNumber": 52,
+	"endColumn": 38,
+	"modelVersionId": 1
+},{
+	"resource": "/C:/Users/brian/screenpledge/lib/features/dashboard/presentation/views/dashboard_page.dart",
+	"owner": "_generated_diagnostic_collection_name_#1",
+	"code": "expected_token",
+	"severity": 8,
+	"message": "Expected to find ','.",
+	"source": "dart",
+	"startLineNumber": 52,
+	"startColumn": 39,
+	"endLineNumber": 52,
+	"endColumn": 44,
+	"modelVersionId": 1
+},{
+	"resource": "/C:/Users/brian/screenpledge/lib/features/dashboard/presentation/views/dashboard_page.dart",
+	"owner": "_generated_diagnostic_collection_name_#1",
+	"code": {
+		"value": "undefined_identifier",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/undefined_identifier",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 8,
+	"message": "Undefined name 'track'.\nTry correcting the name to one that is defined, or defining the name.",
+	"source": "dart",
+	"startLineNumber": 52,
+	"startColumn": 39,
+	"endLineNumber": 52,
+	"endColumn": 44,
+	"modelVersionId": 1
+},{
+	"resource": "/C:/Users/brian/screenpledge/lib/features/dashboard/presentation/views/dashboard_page.dart",
+	"owner": "_generated_diagnostic_collection_name_#1",
+	"code": "expected_token",
+	"severity": 8,
+	"message": "Expected to find ','.",
+	"source": "dart",
+	"startLineNumber": 52,
+	"startColumn": 45,
+	"endLineNumber": 52,
+	"endColumn": 49,
+	"modelVersionId": 1
+},{
+	"resource": "/C:/Users/brian/screenpledge/lib/features/dashboard/presentation/views/dashboard_page.dart",
+	"owner": "_generated_diagnostic_collection_name_#1",
+	"code": {
+		"value": "undefined_identifier",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/undefined_identifier",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 8,
+	"message": "Undefined name 'your'.\nTry correcting the name to one that is defined, or defining the name.",
+	"source": "dart",
+	"startLineNumber": 52,
+	"startColumn": 45,
+	"endLineNumber": 52,
+	"endColumn": 49,
+	"modelVersionId": 1
+},{
+	"resource": "/C:/Users/brian/screenpledge/lib/features/dashboard/presentation/views/dashboard_page.dart",
+	"owner": "_generated_diagnostic_collection_name_#1",
+	"code": "expected_token",
+	"severity": 8,
+	"message": "Expected to find ','.",
+	"source": "dart",
+	"startLineNumber": 52,
+	"startColumn": 50,
+	"endLineNumber": 52,
+	"endColumn": 58,
+	"modelVersionId": 1
+},{
+	"resource": "/C:/Users/brian/screenpledge/lib/features/dashboard/presentation/views/dashboard_page.dart",
+	"owner": "_generated_diagnostic_collection_name_#1",
+	"code": {
+		"value": "undefined_identifier",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/undefined_identifier",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 8,
+	"message": "Undefined name 'progress'.\nTry correcting the name to one that is defined, or defining the name.",
+	"source": "dart",
+	"startLineNumber": 52,
+	"startColumn": 50,
+	"endLineNumber": 52,
+	"endColumn": 58,
+	"modelVersionId": 1
+},{
+	"resource": "/C:/Users/brian/screenpledge/lib/features/dashboard/presentation/views/dashboard_page.dart",
+	"owner": "_generated_diagnostic_collection_name_#1",
+	"code": "expected_token",
+	"severity": 8,
+	"message": "Expected to find ','.",
+	"source": "dart",
+	"startLineNumber": 52,
+	"startColumn": 59,
+	"endLineNumber": 52,
+	"endColumn": 62,
+	"modelVersionId": 1
+},{
+	"resource": "/C:/Users/brian/screenpledge/lib/features/dashboard/presentation/views/dashboard_page.dart",
+	"owner": "_generated_diagnostic_collection_name_#1",
+	"code": {
+		"value": "undefined_identifier",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/undefined_identifier",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 8,
+	"message": "Undefined name 'and'.\nTry correcting the name to one that is defined, or defining the name.",
+	"source": "dart",
+	"startLineNumber": 52,
+	"startColumn": 59,
+	"endLineNumber": 52,
+	"endColumn": 62,
+	"modelVersionId": 1
+},{
+	"resource": "/C:/Users/brian/screenpledge/lib/features/dashboard/presentation/views/dashboard_page.dart",
+	"owner": "_generated_diagnostic_collection_name_#1",
+	"code": "expected_token",
+	"severity": 8,
+	"message": "Expected to find ','.",
+	"source": "dart",
+	"startLineNumber": 52,
+	"startColumn": 63,
+	"endLineNumber": 52,
+	"endColumn": 69,
+	"modelVersionId": 1
+},{
+	"resource": "/C:/Users/brian/screenpledge/lib/features/dashboard/presentation/views/dashboard_page.dart",
+	"owner": "_generated_diagnostic_collection_name_#1",
+	"code": {
+		"value": "undefined_identifier",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/undefined_identifier",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 8,
+	"message": "Undefined name 'manage'.\nTry correcting the name to one that is defined, or defining the name.",
+	"source": "dart",
+	"startLineNumber": 52,
+	"startColumn": 63,
+	"endLineNumber": 52,
+	"endColumn": 69,
+	"modelVersionId": 1
+},{
+	"resource": "/C:/Users/brian/screenpledge/lib/features/dashboard/presentation/views/dashboard_page.dart",
+	"owner": "_generated_diagnostic_collection_name_#1",
+	"code": "expected_token",
+	"severity": 8,
+	"message": "Expected to find ','.",
+	"source": "dart",
+	"startLineNumber": 52,
+	"startColumn": 70,
+	"endLineNumber": 52,
+	"endColumn": 74,
+	"modelVersionId": 1
+},{
+	"resource": "/C:/Users/brian/screenpledge/lib/features/dashboard/presentation/views/dashboard_page.dart",
+	"owner": "_generated_diagnostic_collection_name_#1",
+	"code": {
+		"value": "undefined_identifier",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/undefined_identifier",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 8,
+	"message": "Undefined name 'your'.\nTry correcting the name to one that is defined, or defining the name.",
+	"source": "dart",
+	"startLineNumber": 52,
+	"startColumn": 70,
+	"endLineNumber": 52,
+	"endColumn": 74,
+	"modelVersionId": 1
+},{
+	"resource": "/C:/Users/brian/screenpledge/lib/features/dashboard/presentation/views/dashboard_page.dart",
+	"owner": "_generated_diagnostic_collection_name_#1",
+	"code": "expected_token",
+	"severity": 8,
+	"message": "Expected to find ','.",
+	"source": "dart",
+	"startLineNumber": 52,
+	"startColumn": 75,
+	"endLineNumber": 52,
+	"endColumn": 82,
+	"modelVersionId": 1
+},{
+	"resource": "/C:/Users/brian/screenpledge/lib/features/dashboard/presentation/views/dashboard_page.dart",
+	"owner": "_generated_diagnostic_collection_name_#1",
+	"code": {
+		"value": "undefined_identifier",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/undefined_identifier",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 8,
+	"message": "Undefined name 'pledges'.\nTry correcting the name to one that is defined, or defining the name.",
+	"source": "dart",
+	"startLineNumber": 52,
+	"startColumn": 75,
+	"endLineNumber": 52,
+	"endColumn": 82,
+	"modelVersionId": 1
+},{
+	"resource": "/C:/Users/brian/screenpledge/lib/features/dashboard/presentation/views/dashboard_page.dart",
+	"owner": "_generated_diagnostic_collection_name_#1",
+	"code": "missing_identifier",
+	"severity": 8,
+	"message": "Expected an identifier.",
+	"source": "dart",
+	"startLineNumber": 52,
+	"startColumn": 83,
+	"endLineNumber": 52,
+	"endColumn": 85,
+	"modelVersionId": 1
+},{
+	"resource": "/C:/Users/brian/screenpledge/lib/features/dashboard/presentation/views/dashboard_page.dart",
+	"owner": "_generated_diagnostic_collection_name_#1",
+	"code": "unterminated_string_literal",
+	"severity": 8,
+	"message": "Unterminated string literal.",
+	"source": "dart",
+	"startLineNumber": 52,
+	"startColumn": 84,
+	"endLineNumber": 52,
+	"endColumn": 85,
+	"modelVersionId": 1
+},{
+	"resource": "/C:/Users/brian/screenpledge/lib/features/dashboard/presentation/views/dashboard_page.dart",
+	"owner": "_generated_diagnostic_collection_name_#1",
+	"code": "expected_token",
+	"severity": 8,
+	"message": "Expected to find ','.",
+	"source": "dart",
+	"startLineNumber": 53,
+	"startColumn": 17,
+	"endLineNumber": 53,
+	"endColumn": 22,
+	"modelVersionId": 1
+},{
+	"resource": "/C:/Users/brian/screenpledge/lib/features/dashboard/presentation/views/dashboard_page.dart",
+	"owner": "_generated_diagnostic_collection_name_#1",
+	"code": {
+		"value": "use_key_in_widget_constructors",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/use_key_in_widget_constructors",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 2,
+	"message": "Constructors for public widgets should have a named 'key' parameter.\nTry adding a named parameter to the constructor.",
+	"source": "dart",
+	"startLineNumber": 8,
+	"startColumn": 7,
+	"endLineNumber": 8,
+	"endColumn": 20,
+	"modelVersionId": 1
+},{
+	"resource": "/C:/Users/brian/screenpledge/lib/features/dashboard/presentation/views/dashboard_page.dart",
+	"owner": "_generated_diagnostic_collection_name_#1",
+	"code": {
+		"value": "non_constant_identifier_names",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/non_constant_identifier_names",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 2,
+	"message": "The variable name 'DashboardPledgePendingPage' isn't a lowerCamelCase identifier.\nTry changing the name to follow the lowerCamelCase style.",
+	"source": "dart",
+	"startLineNumber": 9,
+	"startColumn": 9,
+	"endLineNumber": 9,
+	"endColumn": 35,
+	"modelVersionId": 1
+},{
+	"resource": "/C:/Users/brian/screenpledge/lib/features/dashboard/presentation/views/dashboard_page.dart",
+	"owner": "_generated_diagnostic_collection_name_#1",
+	"code": "todo",
+	"severity": 2,
+	"message": "TODO: Implement navigation logic based on index",
+	"source": "dart",
+	"startLineNumber": 22,
+	"startColumn": 8,
+	"endLineNumber": 22,
+	"endColumn": 55,
+	"modelVersionId": 1
+}]

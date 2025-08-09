@@ -31,7 +31,7 @@ To empower individuals to reclaim their time and focus by creating a powerful, p
 
 The user journey is split into two distinct phases, managed by two separate features.
 
-#### **Phase A: Pre-Subscription** (`onboarding_pre_subscription` feature)
+#### **Phase A: Pre-Subscription** (`onboarding_pre` feature) [note: onboarding_pre refers to onboarding pre-subscription]
 *Goal: Convert an anonymous visitor into a trialist.*
 
 - **Get Started Page:** "Get Started" and "Log In" options.
@@ -39,23 +39,25 @@ The user journey is split into two distinct phases, managed by two separate feat
 - **Data Reveal Sequence:** Multi-part, animated screen showing the user's screen time percentage and "Top 3 Time Sinks" with app icons.
 - **Solution Page** A quick page explaining how money backed motivation is effective.
 - **How It Works Sequence:** 4-card carousel explaining the core loop: Pledge → Success → Accountability → Reward.
-- **Subscription Offer Page:** Pricing page where the user commits to the 7-day free trial via native IAP.
+--**Subscription Primer:** A page where we prime the user for their subscription by getting 
+- **Subscription Offer Page:** Pricing page where the user commits to the 7-day free trial via native IAP. Moves them to the free trial explained. 
+-**Free Trial Explained Page:** Explanation of free trial in 'blinkest' style paywall. We show them that we will notify them on day 5 of their trial. Reduces anxiety about signing up.
 
-#### **Phase B: Post-Subscription** (`onboarding_post_subscription` feature)
+#### **Phase B: Post-Subscription** (`onboarding_post` feature) [note: onboarding_post refers to onboarding post-subscription]
 *Goal: Get a new trialist fully configured.*
 
 - **Account Creation Page:** Shown immediately after trial activation. User creates account (Email/OAuth) and links it to subscription.
-- **User Questionnaire Page:** Short, skippable survey (age, occupation, purpose, attribution).
+- **User Survey Seuqence:** Short survey (age, occupation, purpose, attribution).
 - **Goal Setting Page:** User defines their first daily goal (Total Time vs. Custom Group).
-- **Notification Permission Dialog:** "Pre-permission" dialog shown after saving goal.
-- **Accountability Pledge Page:** Dedicated, persuasive screen for setting the Accountability Pledge.
+- **Pledge Page:** Dedicated, persuasive screen for setting the Accountability Pledge.
+- **Notification Permission Dialog:** "Pre-permission" dialog shown after saving accountability. .
+
 
 ### 2.2. The Core Application
 
 #### **Dashboard** (`dashboard` feature)
 
-- **Goal Pending State:** Shown on Day 1. Confirms the goal and shows a countdown to midnight start time.
-- **Goal Active State:** Main dashboard with real-time progress ring, mascot, streak counter, and a 7-day analytics bar chart.
+- **Dashboard Page** One unified dashboard with a corresponding viewmodel that will provide different states for the dashboard
 
 #### **Rewards Marketplace** (`rewards` feature)
 

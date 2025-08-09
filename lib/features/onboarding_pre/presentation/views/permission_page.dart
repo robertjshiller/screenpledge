@@ -77,10 +77,10 @@ class PermissionPage extends StatelessWidget {
                     ),
                     // A small space between the button and the disclaimer text.
                     const SizedBox(height: 16),
-                    // The small, italicized disclaimer text.
+                    // The small disclaimer text.
                     Text(
                       'We only see app usage time -- never your content',
-                      // Using the bodySmall text style, which we have customized to be italic.
+                      // Using the bodySmall text style.
                       style: Theme.of(context).textTheme.bodySmall,
                       textAlign: TextAlign.center,
                     ),

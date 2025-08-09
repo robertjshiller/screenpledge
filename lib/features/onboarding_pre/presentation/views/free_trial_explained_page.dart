@@ -1,6 +1,7 @@
 // lib/features/onboarding_pre/presentation/views/free_trial_explained_page.dart
 
 import 'package:flutter/material.dart';
+import 'package:screenpledge/features/onboarding_post/presentation/views/account_creation_page.dart';
 import '../../../../core/config/theme/app_colors.dart';
 
 /// A page that transparently explains the terms of the free trial to the user.
@@ -66,12 +67,12 @@ class FreeTrialExplainedPage extends StatelessWidget {
               // The primary call-to-action button.
               ElevatedButton(
                 onPressed: () {
-                  // TODO: Implement trial start logic.
-                  // This would typically involve:
-                  // 1. Calling a repository/usecase to start the trial.
-                  // 2. Scheduling the Day 5 reminder notification.
-                  // 3. Navigating the user to the main app experience.
-                  print('Start Free Trial button pressed!');
+                  Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute(
+                      builder: (context) => const AccountCreationPage(),
+                    ),
+                    (Route<dynamic> route) => false,
+                  );
                 },
                 style: ElevatedButton.styleFrom(
                   // Using brand colors for a consistent look and feel.

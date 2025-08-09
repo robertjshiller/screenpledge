@@ -1,0 +1,97 @@
+CupertinoTimerPicker class
+A countdown timer picker in iOS style.
+
+This picker shows a countdown duration with hour, minute and second spinners. The duration is bound between 0 and 23 hours 59 minutes 59 seconds.
+
+There are several modes of the timer picker listed in CupertinoTimerPickerMode.
+
+The picker has a fixed size of 320 x 216, in logical pixels, with the exception of CupertinoTimerPickerMode.hms, which is 330 x 216. If the parent widget provides more space than it needs, the picker will position itself according to its alignment property.
+
+
+This example shows a CupertinoTimerPicker that returns a countdown duration.
+link
+To create a local project with this code sample, run:
+flutter create --sample=cupertino.CupertinoTimerPicker.1 mysample
+
+
+See also:
+
+CupertinoDatePicker, the class that implements different display modes of the iOS-style date picker.
+CupertinoPicker, the class that implements a content agnostic spinner UI.
+developer.apple.com/design/human-interface-guidelines/ios/controls/pickers/
+Inheritance
+Object DiagnosticableTree Widget StatefulWidget CupertinoTimerPicker
+Constructors
+CupertinoTimerPicker({Key? key, CupertinoTimerPickerMode mode = CupertinoTimerPickerMode.hms, Duration initialTimerDuration = Duration.zero, int minuteInterval = 1, int secondInterval = 1, AlignmentGeometry alignment = Alignment.center, Color? backgroundColor, double itemExtent = _kItemExtent, required ValueChanged<Duration> onTimerDurationChanged, SelectionOverlayBuilder? selectionOverlayBuilder})
+Constructs an iOS style countdown timer picker.
+Properties
+alignment → AlignmentGeometry
+Defines how the timer picker should be positioned within its parent.
+final
+backgroundColor → Color?
+Background color of timer picker.
+final
+hashCode → int
+The hash code for this object.
+no setterinherited
+initialTimerDuration → Duration
+The initial duration of the countdown timer.
+final
+itemExtent → double
+The uniform height of all children.
+final
+key → Key?
+Controls how one widget replaces another widget in the tree.
+finalinherited
+minuteInterval → int
+The granularity of the minute spinner. Must be a positive integer factor of 60.
+final
+mode → CupertinoTimerPickerMode
+The mode of the timer picker.
+final
+onTimerDurationChanged → ValueChanged<Duration>
+Callback called when the timer duration changes.
+final
+runtimeType → Type
+A representation of the runtime type of the object.
+no setterinherited
+secondInterval → int
+The granularity of the second spinner. Must be a positive integer factor of 60.
+final
+selectionOverlayBuilder → SelectionOverlayBuilder?
+A function that returns a widget that is overlaid on the picker to highlight the currently selected entry.
+final
+Methods
+createElement() → StatefulElement
+Creates a StatefulElement to manage this widget's location in the tree.
+inherited
+createState() → State<StatefulWidget>
+Creates the mutable state for this widget at a given location in the tree.
+override
+debugDescribeChildren() → List<DiagnosticsNode>
+Returns a list of DiagnosticsNode objects describing this node's children.
+inherited
+debugFillProperties(DiagnosticPropertiesBuilder properties) → void
+Add additional properties associated with the node.
+inherited
+noSuchMethod(Invocation invocation) → dynamic
+Invoked when a nonexistent method or property is accessed.
+inherited
+toDiagnosticsNode({String? name, DiagnosticsTreeStyle? style}) → DiagnosticsNode
+Returns a debug representation of the object that is used by debugging tools and by DiagnosticsNode.toStringDeep.
+inherited
+toString({DiagnosticLevel minLevel = DiagnosticLevel.info}) → String
+A string representation of this object.
+inherited
+toStringDeep({String prefixLineOne = '', String? prefixOtherLines, DiagnosticLevel minLevel = DiagnosticLevel.debug, int wrapWidth = 65}) → String
+Returns a string representation of this node and its descendants.
+inherited
+toStringShallow({String joiner = ', ', DiagnosticLevel minLevel = DiagnosticLevel.debug}) → String
+Returns a one-line detailed description of the object.
+inherited
+toStringShort() → String
+A short, textual description of this widget.
+inherited
+Operators
+operator ==(Object other) → bool
+The equality operator.
