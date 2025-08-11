@@ -30,6 +30,7 @@ CREATE TABLE public.profiles (
   streak_count integer NOT NULL DEFAULT 0,
   accountability_status public.accountability_status NOT NULL DEFAULT 'inactive',
   accountability_amount_cents integer NOT NULL DEFAULT 0,
+  revenuecat_app_user_id text UNIQUE;
   stripe_customer_id text UNIQUE,
   user_timezone text NOT NULL,
   show_contextual_tips boolean NOT NULL DEFAULT true,

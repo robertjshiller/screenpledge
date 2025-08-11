@@ -1,50 +1,59 @@
+// lib/features/onboarding_pre/presentation/views/subscription_offer_page.dart
+
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:screenpledge/core/config/theme/app_colors.dart';
 import 'package:screenpledge/core/common_widgets/primary_button.dart';
 import 'package:screenpledge/features/onboarding_pre/presentation/views/free_trial_explained_page.dart';
+import 'package:screenpledge/features/onboarding_pre/presentation/viewmodels/subscription_offer_viewmodel.dart';
 
-class SubscriptionOfferPage extends StatefulWidget {
+/// Subscription selection screen.
+///
+/// This is the VIEW layer in clean architecture.
+/// All logic/state is delegated to the ViewModel.
+class SubscriptionOfferPage extends ConsumerWidget {
   const SubscriptionOfferPage({super.key});
 
-  @override
-  State<SubscriptionOfferPage> createState() => _SubscriptionOfferPageState();
-}
-
-class _SubscriptionOfferPageState extends State<SubscriptionOfferPage> {
-  int? _selectedBox = 1; // Annual is index 1
-
-  // ----- COLOR CONSTANTS -----
-  static const Color outlineGreen     = AppColors.buttonStroke;
-  static const Color lightGreen       = Color(0xFFD4FFE9); // pale highlight
-  static const Color freeTrialGreen   = AppColors.buttonFill; // green badge
-  static const Color popularOrange    = Color.fromARGB(255, 255, 176, 85);   // orange badge
-  static const Color badgeText        = Colors.black;
-
   // ----- PLAN DEFINITIONS -----
-  final List<Map<String, dynamic>> plans = [
+  // This static data defines the options presented to the user.
+  static final List<Map<String, dynamic>> plans = [
     {
-      'label'       : 'Monthly',
-      'price'       : '\$2.99/month',
-      'freeTrial'   : true,
-      'mostPopular' : false,
-      'subtext'     : '',
-      'savings'     : '',
+      'label': 'Monthly',
+      'price': '\$2.99/month',
+      'freeTrial': true,
+      'mostPopular': false,
+      'subtext': '',
+      'savings': '',
+      'packageId': 'monthly', // RevenueCat package identifier
     },
     {
-      'label'       : 'Annual',
-      'price'       : '\$19.99/year',
-      'freeTrial'   : true,
-      'mostPopular' : true,
-      'subtext'     : 'Just \$1.67/month',
-      'savings'     : '(Save 61%)',
+      'label': 'Annual',
+      'price': '\$19.99/year',
+      'freeTrial': true,
+      'mostPopular': true,
+      'subtext': 'Just \$1.67/month',
+      'savings': '(Save 61%)',
+      'packageId': 'annual', // RevenueCat package identifier
     },
   ];
 
-  // ===========================
-  // BUILD
-  // ===========================
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // We only need the notifier to call `selectPlan`.
+    final viewModel = ref.watch(subscriptionOfferViewModelProvider.notifier);
+    // We watch the state itself to react to loading/error states if they occur.
+    final asyncState = ref.watch(subscriptionOfferViewModelProvider);
+
+    // ✅ ADDED: A listener to show an error if something unexpected happens.
+    // This is good practice for handling any potential errors from the ViewModel.
+    ref.listen<AsyncValue<void>>(subscriptionOfferViewModelProvider, (_, state) {
+      if (state is AsyncError) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('An error occurred: ${state.error}')),
+        );
+      }
+    });
+
     return Scaffold(
       appBar: AppBar(),
       body: SafeArea(
@@ -54,7 +63,6 @@ class _SubscriptionOfferPageState extends State<SubscriptionOfferPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // ---- HEADLINE ----
                 Center(
                   child: Text(
                     'Commit to\nA Better You',
@@ -62,35 +70,39 @@ class _SubscriptionOfferPageState extends State<SubscriptionOfferPage> {
                     textAlign: TextAlign.center,
                   ),
                 ),
-
                 const SizedBox(height: 8),
 
-                // ---- CHECKLIST ----
-                const _CheckListRow(label: 'Build life-changing habits',   boldWord: 'Build'),
-                const _CheckListRow(label: 'Reclaim hours of your free time', boldWord: 'Reclaim'),
-                const _CheckListRow(label: 'Focus to earn real rewards',   boldWord: 'Focus'),
-
+                const _CheckListRow(
+                    label: 'Build life-changing habits', boldWord: 'Build'),
+                const _CheckListRow(
+                    label: 'Reclaim hours of your free time',
+                    boldWord: 'Reclaim'),
+                const _CheckListRow(
+                    label: 'Focus to earn real rewards', boldWord: 'Focus'),
                 const SizedBox(height: 16),
 
-                // ---- SUBSCRIPTION CARDS ----
+                // Subscription plan cards
                 ...List.generate(plans.length, (i) {
-                  final plan         = plans[i];
-                  final isSelected   = _selectedBox == i;
-                  final isFreeTrial  = plan['freeTrial']   == true;
-                  final isMostPop    = plan['mostPopular'] == true;
-                  final subtext      = plan['subtext'] as String? ?? '';
-                  final savings      = plan['savings'] as String? ?? '';
+                  final plan = plans[i];
+                  final isSelected = viewModel.selectedIndex == i;
+                  final isFreeTrial = plan['freeTrial'] == true;
+                  final isMostPop = plan['mostPopular'] == true;
+                  final subtext = plan['subtext'] as String? ?? '';
+                  final savings = plan['savings'] as String? ?? '';
 
                   return Container(
                     margin: const EdgeInsets.symmetric(vertical: 8),
                     decoration: BoxDecoration(
-                      color: isSelected ? lightGreen : Colors.white,
+                      color: isSelected
+                          ? const Color(0xFFD4FFE9)
+                          : Colors.white,
                       borderRadius: BorderRadius.circular(18),
-                      border: Border.all(color: outlineGreen, width: 2),
+                      border: Border.all(
+                          color: AppColors.buttonStroke, width: 2),
                       boxShadow: [
                         if (isSelected)
                           BoxShadow(
-                            color: outlineGreen.withOpacity(0.08),
+                            color: AppColors.buttonStroke.withOpacity(0.08),
                             blurRadius: 12,
                             offset: const Offset(0, 2),
                           ),
@@ -100,26 +112,22 @@ class _SubscriptionOfferPageState extends State<SubscriptionOfferPage> {
                       color: Colors.transparent,
                       child: InkWell(
                         borderRadius: BorderRadius.circular(18),
-                        onTap: () => setState(() => _selectedBox = i),
+                        onTap: () => viewModel.selectPlan(i),
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 18, vertical: 18),
                           child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
-                              // ---- RADIO ----
                               CustomRadio(
                                 selected: isSelected,
-                                onTap: () => setState(() => _selectedBox = i),
-                                outlineColor: outlineGreen,
+                                onTap: () => viewModel.selectPlan(i),
+                                outlineColor: AppColors.buttonStroke,
                                 fillColor: Colors.white,
                                 selectedFillColor: AppColors.buttonFill,
                                 checkmarkColor: AppColors.buttonText,
                                 size: 22,
                               ),
-
                               const SizedBox(width: 18),
-
-                              // ---- LABEL + PRICE ----
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -129,7 +137,9 @@ class _SubscriptionOfferPageState extends State<SubscriptionOfferPage> {
                                       style: Theme.of(context)
                                           .textTheme
                                           .displayLarge!
-                                          .copyWith(fontSize: 24, fontWeight: FontWeight.w800),
+                                          .copyWith(
+                                              fontSize: 24,
+                                              fontWeight: FontWeight.w800),
                                     ),
                                     const SizedBox(height: 2),
                                     Text(
@@ -142,57 +152,56 @@ class _SubscriptionOfferPageState extends State<SubscriptionOfferPage> {
                                   ],
                                 ),
                               ),
-
-                              // ---- BADGES + SUBTEXT ----
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
-                                  // Badges row
                                   if (isFreeTrial || isMostPop)
                                     Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
                                         if (isFreeTrial)
                                           _Badge(
-                                            label: 'Free Trial',
-                                            background: freeTrialGreen,
-                                          ),
+                                              label: 'Free Trial',
+                                              background:
+                                                  AppColors.buttonFill),
                                         if (isFreeTrial && isMostPop)
                                           const SizedBox(width: 6),
                                         if (isMostPop)
                                           _Badge(
-                                            label: 'Most Popular',
-                                            background: popularOrange,
-                                          ),
+                                              label: 'Most Popular',
+                                              background: const Color.fromARGB(
+                                                  255, 255, 176, 85)),
                                       ],
                                     ),
-
-                                  // Subtext / savings
-                                  if (subtext.isNotEmpty || savings.isNotEmpty) ...[
+                                  if (subtext.isNotEmpty ||
+                                      savings.isNotEmpty) ...[
                                     if (subtext.isNotEmpty)
                                       Padding(
-                                        padding: const EdgeInsets.only(top: 4),
+                                        padding:
+                                            const EdgeInsets.only(top: 4),
                                         child: Text(
                                           subtext,
-                                          style: Theme.of(context).textTheme.bodySmall!.copyWith(
-                                                color: AppColors.secondaryText,
-                                                fontWeight: FontWeight.w600,
-                                              ),
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodySmall!
+                                              .copyWith(
+                                                  color: AppColors
+                                                      .secondaryText,
+                                                  fontWeight: FontWeight.w600),
                                         ),
                                       ),
                                     if (savings.isNotEmpty)
-                                      Padding(
-                                        padding: const EdgeInsets.only(top: 0),
-                                        child: Text(
-                                          savings,
-                                          style: Theme.of(context).textTheme.bodySmall!.copyWith(
-                                                color: outlineGreen,
-                                                fontStyle: FontStyle.italic,
-                                              ),
-                                        ),
+                                      Text(
+                                        savings,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodySmall!
+                                            .copyWith(
+                                                color:
+                                                    AppColors.buttonStroke,
+                                                fontStyle: FontStyle.italic),
                                       ),
-                                  ] else
-                                    const SizedBox(height: 24), // aligns Monthly badge
+                                  ],
                                 ],
                               ),
                             ],
@@ -202,31 +211,41 @@ class _SubscriptionOfferPageState extends State<SubscriptionOfferPage> {
                     ),
                   );
                 }),
-
                 const SizedBox(height: 18),
-
-                // ---- DISCLAIMER ----
                 Center(
                   child: Text(
                     "You won't be charged today.\nFree trial details on the next screen.",
                     style: Theme.of(context).textTheme.bodyLarge!.copyWith(
-                          color: AppColors.secondaryText,
-                        ),
+                        color: AppColors.secondaryText),
                     textAlign: TextAlign.center,
                   ),
                 ),
-
                 const SizedBox(height: 18),
-
-                // ---- PRIMARY BUTTON ----
                 Center(
                   child: SizedBox(
                     width: 320,
                     child: PrimaryButton(
-                      text: 'Continue',
-                      onPressed: () {
-                        Navigator.push(context, MaterialPageRoute(builder: (context) => const FreeTrialExplainedPage()));
-                      },
+                      // The button is only disabled if the ViewModel is in a loading state,
+                      // which shouldn't happen on this screen anymore, but is good practice.
+                      text: asyncState.isLoading ? 'Processing...' : 'Continue',
+                      onPressed: asyncState.isLoading
+                          ? null
+                          : () {
+                              // ✅ CHANGED: This button no longer calls purchase().
+                              // Its only job is to navigate to the explanation page,
+                              // passing along the data for the user's chosen plan.
+                              final selectedPlan = plans[viewModel.selectedIndex];
+                              
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => FreeTrialExplainedPage(
+                                    // ✅ PASSING DATA: We send the selected plan's info.
+                                    planDetails: selectedPlan,
+                                  ),
+                                ),
+                              );
+                            },
                     ),
                   ),
                 ),
@@ -239,18 +258,14 @@ class _SubscriptionOfferPageState extends State<SubscriptionOfferPage> {
   }
 }
 
-/* ===========================================================================
-   SMALL WIDGETS
-   =========================================================================== */
+/* ===================================================================
+   SMALL UI COMPONENTS (VIEW-ONLY)
+   =================================================================== */
 
-/// Badge with customizable background and matching stroke.
 class _Badge extends StatelessWidget {
   final String label;
-  final Color  background;
-  const _Badge({
-    required this.label,
-    required this.background,
-  });
+  final Color background;
+  const _Badge({required this.label, required this.background});
 
   @override
   Widget build(BuildContext context) => Container(
@@ -259,34 +274,33 @@ class _Badge extends StatelessWidget {
           color: background,
           borderRadius: BorderRadius.circular(9),
           border: Border.all(
-            color: _SubscriptionOfferPageState.outlineGreen,
+            color: AppColors.buttonStroke,
             width: 1.5,
           ),
         ),
         child: Text(
           label,
           style: Theme.of(context).textTheme.bodySmall!.copyWith(
-                color: _SubscriptionOfferPageState.badgeText,
+                color: Colors.black,
                 fontWeight: FontWeight.bold,
               ),
         ),
       );
 }
 
-/// Checklist row: bolds one keyword.
 class _CheckListRow extends StatelessWidget {
   final String label, boldWord;
   const _CheckListRow({required this.label, required this.boldWord});
 
   @override
   Widget build(BuildContext context) {
-    final parts   = label.split(' ');
-    final boldIdx = parts.indexWhere((w) => w.toLowerCase() == boldWord.toLowerCase());
+    final parts = label.split(' ');
+    final boldIdx = parts
+        .indexWhere((w) => w.toLowerCase() == boldWord.toLowerCase());
 
     return Padding(
       padding: const EdgeInsets.only(top: 4),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(Icons.check, size: 22, color: AppColors.buttonStroke),
           const SizedBox(width: 8),
@@ -314,7 +328,6 @@ class _CheckListRow extends StatelessWidget {
   }
 }
 
-/* ---- CustomRadio (unchanged) ---- */
 class CustomRadio extends StatelessWidget {
   final bool selected;
   final VoidCallback onTap;

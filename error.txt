@@ -1,69 +1,49 @@
 [{
-	"resource": "/C:/Users/brian/screenpledge/lib/features/dashboard/presentation/views/dashboard_page.dart",
+	"resource": "/c:/Users/brian/screenpledge/lib/core/services/android_screen_time_service.dart",
 	"owner": "_generated_diagnostic_collection_name_#1",
-	"code": "const_method",
+	"code": "unterminated_string_literal",
 	"severity": 8,
-	"message": "Getters, setters and methods can't be declared to be 'const'.\nTry removing the 'const' keyword.",
+	"message": "Unterminated string literal.",
 	"source": "dart",
-	"startLineNumber": 9,
-	"startColumn": 3,
-	"endLineNumber": 9,
-	"endColumn": 8,
-	"modelVersionId": 1
+	"startLineNumber": 36,
+	"startColumn": 75,
+	"endLineNumber": 36,
+	"endColumn": 76,
+	"modelVersionId": 9
 },{
-	"resource": "/C:/Users/brian/screenpledge/lib/features/dashboard/presentation/views/dashboard_page.dart",
-	"owner": "_generated_diagnostic_collection_name_#1",
-	"code": {
-		"value": "concrete_class_with_abstract_member",
-		"target": {
-			"$mid": 1,
-			"path": "/diagnostics/concrete_class_with_abstract_member",
-			"scheme": "https",
-			"authority": "dart.dev"
-		}
-	},
-	"severity": 8,
-	"message": "'DashboardPledgePendingPage' must have a method body because 'DashboardPage' isn't abstract.\nTry making 'DashboardPage' abstract, or adding a body to 'DashboardPledgePendingPage'.",
-	"source": "dart",
-	"startLineNumber": 9,
-	"startColumn": 9,
-	"endLineNumber": 9,
-	"endColumn": 49,
-	"modelVersionId": 1
-},{
-	"resource": "/C:/Users/brian/screenpledge/lib/features/dashboard/presentation/views/dashboard_page.dart",
-	"owner": "_generated_diagnostic_collection_name_#1",
-	"code": {
-		"value": "invalid_super_formal_parameter_location",
-		"target": {
-			"$mid": 1,
-			"path": "/diagnostics/invalid_super_formal_parameter_location",
-			"scheme": "https",
-			"authority": "dart.dev"
-		}
-	},
-	"severity": 8,
-	"message": "Super parameters can only be used in non-redirecting generative constructors.\nTry removing the 'super' modifier, or changing the constructor to be non-redirecting and generative.",
-	"source": "dart",
-	"startLineNumber": 9,
-	"startColumn": 37,
-	"endLineNumber": 9,
-	"endColumn": 42,
-	"modelVersionId": 1
-},{
-	"resource": "/C:/Users/brian/screenpledge/lib/features/dashboard/presentation/views/dashboard_page.dart",
+	"resource": "/c:/Users/brian/screenpledge/lib/core/services/android_screen_time_service.dart",
 	"owner": "_generated_diagnostic_collection_name_#1",
 	"code": "expected_token",
 	"severity": 8,
 	"message": "Expected to find ','.",
 	"source": "dart",
-	"startLineNumber": 52,
-	"startColumn": 36,
-	"endLineNumber": 52,
-	"endColumn": 38,
-	"modelVersionId": 1
+	"startLineNumber": 37,
+	"startColumn": 1,
+	"endLineNumber": 37,
+	"endColumn": 5,
+	"modelVersionId": 9
 },{
-	"resource": "/C:/Users/brian/screenpledge/lib/features/dashboard/presentation/views/dashboard_page.dart",
+	"resource": "/c:/Users/brian/screenpledge/lib/core/services/android_screen_time_service.dart",
+	"owner": "_generated_diagnostic_collection_name_#1",
+	"code": {
+		"value": "undefined_identifier",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/undefined_identifier",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 8,
+	"message": "Undefined name 'This'.\nTry correcting the name to one that is defined, or defining the name.",
+	"source": "dart",
+	"startLineNumber": 37,
+	"startColumn": 1,
+	"endLineNumber": 37,
+	"endColumn": 5,
+	"modelVersionId": 9
+},{
+	"resource": "/c:/Users/brian/screenpledge/lib/core/services/android_screen_time_service.dart",
 	"owner": "_generated_diagnostic_collection_name_#1",
 	"code": {
 		"value": "extra_positional_arguments_could_be_named",
@@ -75,343 +55,291 @@
 		}
 	},
 	"severity": 8,
-	"message": "Too many positional arguments: 1 expected, but 9 found.\nTry removing the extra positional arguments, or specifying the name for named arguments.",
+	"message": "Too many positional arguments: 1 expected, but 2 found.\nTry removing the extra positional arguments, or specifying the name for named arguments.",
 	"source": "dart",
-	"startLineNumber": 52,
-	"startColumn": 36,
-	"endLineNumber": 52,
-	"endColumn": 38,
-	"modelVersionId": 1
+	"startLineNumber": 37,
+	"startColumn": 1,
+	"endLineNumber": 37,
+	"endColumn": 17,
+	"modelVersionId": 9
 },{
-	"resource": "/C:/Users/brian/screenpledge/lib/features/dashboard/presentation/views/dashboard_page.dart",
-	"owner": "_generated_diagnostic_collection_name_#1",
-	"code": {
-		"value": "undefined_identifier",
-		"target": {
-			"$mid": 1,
-			"path": "/diagnostics/undefined_identifier",
-			"scheme": "https",
-			"authority": "dart.dev"
-		}
-	},
-	"severity": 8,
-	"message": "Undefined name 'll'.\nTry correcting the name to one that is defined, or defining the name.",
-	"source": "dart",
-	"startLineNumber": 52,
-	"startColumn": 36,
-	"endLineNumber": 52,
-	"endColumn": 38,
-	"modelVersionId": 1
-},{
-	"resource": "/C:/Users/brian/screenpledge/lib/features/dashboard/presentation/views/dashboard_page.dart",
+	"resource": "/c:/Users/brian/screenpledge/lib/core/services/android_screen_time_service.dart",
 	"owner": "_generated_diagnostic_collection_name_#1",
 	"code": "expected_token",
 	"severity": 8,
-	"message": "Expected to find ','.",
+	"message": "Expected to find ';'.",
 	"source": "dart",
-	"startLineNumber": 52,
-	"startColumn": 39,
-	"endLineNumber": 52,
-	"endColumn": 44,
-	"modelVersionId": 1
+	"startLineNumber": 37,
+	"startColumn": 9,
+	"endLineNumber": 37,
+	"endColumn": 17,
+	"modelVersionId": 9
 },{
-	"resource": "/C:/Users/brian/screenpledge/lib/features/dashboard/presentation/views/dashboard_page.dart",
+	"resource": "/c:/Users/brian/screenpledge/lib/core/services/android_screen_time_service.dart",
 	"owner": "_generated_diagnostic_collection_name_#1",
 	"code": {
-		"value": "undefined_identifier",
+		"value": "type_test_with_undefined_name",
 		"target": {
 			"$mid": 1,
-			"path": "/diagnostics/undefined_identifier",
+			"path": "/diagnostics/type_test_with_undefined_name",
 			"scheme": "https",
 			"authority": "dart.dev"
 		}
 	},
 	"severity": 8,
-	"message": "Undefined name 'track'.\nTry correcting the name to one that is defined, or defining the name.",
+	"message": "The name 'expected' isn't defined, so it can't be used in an 'is' expression.\nTry changing the name to the name of an existing type, or creating a type with the name 'expected'.",
 	"source": "dart",
-	"startLineNumber": 52,
-	"startColumn": 39,
-	"endLineNumber": 52,
-	"endColumn": 44,
-	"modelVersionId": 1
+	"startLineNumber": 37,
+	"startColumn": 9,
+	"endLineNumber": 37,
+	"endColumn": 17,
+	"modelVersionId": 9
 },{
-	"resource": "/C:/Users/brian/screenpledge/lib/features/dashboard/presentation/views/dashboard_page.dart",
+	"resource": "/c:/Users/brian/screenpledge/lib/core/services/android_screen_time_service.dart",
 	"owner": "_generated_diagnostic_collection_name_#1",
 	"code": "expected_token",
 	"severity": 8,
-	"message": "Expected to find ','.",
+	"message": "Expected to find ')'.",
 	"source": "dart",
-	"startLineNumber": 52,
-	"startColumn": 45,
-	"endLineNumber": 52,
-	"endColumn": 49,
-	"modelVersionId": 1
+	"startLineNumber": 37,
+	"startColumn": 18,
+	"endLineNumber": 37,
+	"endColumn": 19,
+	"modelVersionId": 9
 },{
-	"resource": "/C:/Users/brian/screenpledge/lib/features/dashboard/presentation/views/dashboard_page.dart",
-	"owner": "_generated_diagnostic_collection_name_#1",
-	"code": {
-		"value": "undefined_identifier",
-		"target": {
-			"$mid": 1,
-			"path": "/diagnostics/undefined_identifier",
-			"scheme": "https",
-			"authority": "dart.dev"
-		}
-	},
-	"severity": 8,
-	"message": "Undefined name 'your'.\nTry correcting the name to one that is defined, or defining the name.",
-	"source": "dart",
-	"startLineNumber": 52,
-	"startColumn": 45,
-	"endLineNumber": 52,
-	"endColumn": 49,
-	"modelVersionId": 1
-},{
-	"resource": "/C:/Users/brian/screenpledge/lib/features/dashboard/presentation/views/dashboard_page.dart",
+	"resource": "/c:/Users/brian/screenpledge/lib/core/services/android_screen_time_service.dart",
 	"owner": "_generated_diagnostic_collection_name_#1",
 	"code": "expected_token",
 	"severity": 8,
-	"message": "Expected to find ','.",
+	"message": "Expected to find '('.",
 	"source": "dart",
-	"startLineNumber": 52,
-	"startColumn": 50,
-	"endLineNumber": 52,
-	"endColumn": 58,
-	"modelVersionId": 1
+	"startLineNumber": 37,
+	"startColumn": 21,
+	"endLineNumber": 37,
+	"endColumn": 24,
+	"modelVersionId": 9
 },{
-	"resource": "/C:/Users/brian/screenpledge/lib/features/dashboard/presentation/views/dashboard_page.dart",
-	"owner": "_generated_diagnostic_collection_name_#1",
-	"code": {
-		"value": "undefined_identifier",
-		"target": {
-			"$mid": 1,
-			"path": "/diagnostics/undefined_identifier",
-			"scheme": "https",
-			"authority": "dart.dev"
-		}
-	},
-	"severity": 8,
-	"message": "Undefined name 'progress'.\nTry correcting the name to one that is defined, or defining the name.",
-	"source": "dart",
-	"startLineNumber": 52,
-	"startColumn": 50,
-	"endLineNumber": 52,
-	"endColumn": 58,
-	"modelVersionId": 1
-},{
-	"resource": "/C:/Users/brian/screenpledge/lib/features/dashboard/presentation/views/dashboard_page.dart",
-	"owner": "_generated_diagnostic_collection_name_#1",
-	"code": "expected_token",
-	"severity": 8,
-	"message": "Expected to find ','.",
-	"source": "dart",
-	"startLineNumber": 52,
-	"startColumn": 59,
-	"endLineNumber": 52,
-	"endColumn": 62,
-	"modelVersionId": 1
-},{
-	"resource": "/C:/Users/brian/screenpledge/lib/features/dashboard/presentation/views/dashboard_page.dart",
-	"owner": "_generated_diagnostic_collection_name_#1",
-	"code": {
-		"value": "undefined_identifier",
-		"target": {
-			"$mid": 1,
-			"path": "/diagnostics/undefined_identifier",
-			"scheme": "https",
-			"authority": "dart.dev"
-		}
-	},
-	"severity": 8,
-	"message": "Undefined name 'and'.\nTry correcting the name to one that is defined, or defining the name.",
-	"source": "dart",
-	"startLineNumber": 52,
-	"startColumn": 59,
-	"endLineNumber": 52,
-	"endColumn": 62,
-	"modelVersionId": 1
-},{
-	"resource": "/C:/Users/brian/screenpledge/lib/features/dashboard/presentation/views/dashboard_page.dart",
-	"owner": "_generated_diagnostic_collection_name_#1",
-	"code": "expected_token",
-	"severity": 8,
-	"message": "Expected to find ','.",
-	"source": "dart",
-	"startLineNumber": 52,
-	"startColumn": 63,
-	"endLineNumber": 52,
-	"endColumn": 69,
-	"modelVersionId": 1
-},{
-	"resource": "/C:/Users/brian/screenpledge/lib/features/dashboard/presentation/views/dashboard_page.dart",
-	"owner": "_generated_diagnostic_collection_name_#1",
-	"code": {
-		"value": "undefined_identifier",
-		"target": {
-			"$mid": 1,
-			"path": "/diagnostics/undefined_identifier",
-			"scheme": "https",
-			"authority": "dart.dev"
-		}
-	},
-	"severity": 8,
-	"message": "Undefined name 'manage'.\nTry correcting the name to one that is defined, or defining the name.",
-	"source": "dart",
-	"startLineNumber": 52,
-	"startColumn": 63,
-	"endLineNumber": 52,
-	"endColumn": 69,
-	"modelVersionId": 1
-},{
-	"resource": "/C:/Users/brian/screenpledge/lib/features/dashboard/presentation/views/dashboard_page.dart",
-	"owner": "_generated_diagnostic_collection_name_#1",
-	"code": "expected_token",
-	"severity": 8,
-	"message": "Expected to find ','.",
-	"source": "dart",
-	"startLineNumber": 52,
-	"startColumn": 70,
-	"endLineNumber": 52,
-	"endColumn": 74,
-	"modelVersionId": 1
-},{
-	"resource": "/C:/Users/brian/screenpledge/lib/features/dashboard/presentation/views/dashboard_page.dart",
-	"owner": "_generated_diagnostic_collection_name_#1",
-	"code": {
-		"value": "undefined_identifier",
-		"target": {
-			"$mid": 1,
-			"path": "/diagnostics/undefined_identifier",
-			"scheme": "https",
-			"authority": "dart.dev"
-		}
-	},
-	"severity": 8,
-	"message": "Undefined name 'your'.\nTry correcting the name to one that is defined, or defining the name.",
-	"source": "dart",
-	"startLineNumber": 52,
-	"startColumn": 70,
-	"endLineNumber": 52,
-	"endColumn": 74,
-	"modelVersionId": 1
-},{
-	"resource": "/C:/Users/brian/screenpledge/lib/features/dashboard/presentation/views/dashboard_page.dart",
-	"owner": "_generated_diagnostic_collection_name_#1",
-	"code": "expected_token",
-	"severity": 8,
-	"message": "Expected to find ','.",
-	"source": "dart",
-	"startLineNumber": 52,
-	"startColumn": 75,
-	"endLineNumber": 52,
-	"endColumn": 82,
-	"modelVersionId": 1
-},{
-	"resource": "/C:/Users/brian/screenpledge/lib/features/dashboard/presentation/views/dashboard_page.dart",
-	"owner": "_generated_diagnostic_collection_name_#1",
-	"code": {
-		"value": "undefined_identifier",
-		"target": {
-			"$mid": 1,
-			"path": "/diagnostics/undefined_identifier",
-			"scheme": "https",
-			"authority": "dart.dev"
-		}
-	},
-	"severity": 8,
-	"message": "Undefined name 'pledges'.\nTry correcting the name to one that is defined, or defining the name.",
-	"source": "dart",
-	"startLineNumber": 52,
-	"startColumn": 75,
-	"endLineNumber": 52,
-	"endColumn": 82,
-	"modelVersionId": 1
-},{
-	"resource": "/C:/Users/brian/screenpledge/lib/features/dashboard/presentation/views/dashboard_page.dart",
+	"resource": "/c:/Users/brian/screenpledge/lib/core/services/android_screen_time_service.dart",
 	"owner": "_generated_diagnostic_collection_name_#1",
 	"code": "missing_identifier",
 	"severity": 8,
 	"message": "Expected an identifier.",
 	"source": "dart",
-	"startLineNumber": 52,
-	"startColumn": 83,
-	"endLineNumber": 52,
-	"endColumn": 85,
-	"modelVersionId": 1
+	"startLineNumber": 37,
+	"startColumn": 21,
+	"endLineNumber": 37,
+	"endColumn": 24,
+	"modelVersionId": 9
 },{
-	"resource": "/C:/Users/brian/screenpledge/lib/features/dashboard/presentation/views/dashboard_page.dart",
+	"resource": "/c:/Users/brian/screenpledge/lib/core/services/android_screen_time_service.dart",
+	"owner": "_generated_diagnostic_collection_name_#1",
+	"code": {
+		"value": "undefined_class",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/undefined_class",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 8,
+	"message": "Undefined class 'the'.\nTry changing the name to the name of an existing class, or creating a class with the name 'the'.",
+	"source": "dart",
+	"startLineNumber": 37,
+	"startColumn": 21,
+	"endLineNumber": 37,
+	"endColumn": 24,
+	"modelVersionId": 9
+},{
+	"resource": "/c:/Users/brian/screenpledge/lib/core/services/android_screen_time_service.dart",
+	"owner": "_generated_diagnostic_collection_name_#1",
+	"code": "expected_token",
+	"severity": 8,
+	"message": "Expected to find ';'.",
+	"source": "dart",
+	"startLineNumber": 37,
+	"startColumn": 25,
+	"endLineNumber": 37,
+	"endColumn": 29,
+	"modelVersionId": 9
+},{
+	"resource": "/c:/Users/brian/screenpledge/lib/core/services/android_screen_time_service.dart",
+	"owner": "_generated_diagnostic_collection_name_#1",
+	"code": {
+		"value": "undefined_class",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/undefined_class",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 8,
+	"message": "Undefined class 'has'.\nTry changing the name to the name of an existing class, or creating a class with the name 'has'.",
+	"source": "dart",
+	"startLineNumber": 37,
+	"startColumn": 30,
+	"endLineNumber": 37,
+	"endColumn": 33,
+	"modelVersionId": 9
+},{
+	"resource": "/c:/Users/brian/screenpledge/lib/core/services/android_screen_time_service.dart",
+	"owner": "_generated_diagnostic_collection_name_#1",
+	"code": "expected_token",
+	"severity": 8,
+	"message": "Expected to find ';'.",
+	"source": "dart",
+	"startLineNumber": 37,
+	"startColumn": 34,
+	"endLineNumber": 37,
+	"endColumn": 37,
+	"modelVersionId": 9
+},{
+	"resource": "/c:/Users/brian/screenpledge/lib/core/services/android_screen_time_service.dart",
+	"owner": "_generated_diagnostic_collection_name_#1",
+	"code": {
+		"value": "undefined_class",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/undefined_class",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 8,
+	"message": "Undefined class 'granted'.\nTry changing the name to the name of an existing class, or creating a class with the name 'granted'.",
+	"source": "dart",
+	"startLineNumber": 37,
+	"startColumn": 38,
+	"endLineNumber": 37,
+	"endColumn": 45,
+	"modelVersionId": 9
+},{
+	"resource": "/c:/Users/brian/screenpledge/lib/core/services/android_screen_time_service.dart",
+	"owner": "_generated_diagnostic_collection_name_#1",
+	"code": "expected_token",
+	"severity": 8,
+	"message": "Expected to find ';'.",
+	"source": "dart",
+	"startLineNumber": 37,
+	"startColumn": 46,
+	"endLineNumber": 37,
+	"endColumn": 56,
+	"modelVersionId": 9
+},{
+	"resource": "/c:/Users/brian/screenpledge/lib/core/services/android_screen_time_service.dart",
+	"owner": "_generated_diagnostic_collection_name_#1",
+	"code": {
+		"value": "undefined_identifier",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/undefined_identifier",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 8,
+	"message": "Undefined name 'yet'.\nTry correcting the name to one that is defined, or defining the name.",
+	"source": "dart",
+	"startLineNumber": 37,
+	"startColumn": 57,
+	"endLineNumber": 37,
+	"endColumn": 60,
+	"modelVersionId": 9
+},{
+	"resource": "/c:/Users/brian/screenpledge/lib/core/services/android_screen_time_service.dart",
+	"owner": "_generated_diagnostic_collection_name_#1",
+	"code": "missing_identifier",
+	"severity": 8,
+	"message": "Expected an identifier.",
+	"source": "dart",
+	"startLineNumber": 37,
+	"startColumn": 61,
+	"endLineNumber": 37,
+	"endColumn": 64,
+	"modelVersionId": 9
+},{
+	"resource": "/c:/Users/brian/screenpledge/lib/core/services/android_screen_time_service.dart",
+	"owner": "_generated_diagnostic_collection_name_#1",
+	"code": "expected_token",
+	"severity": 8,
+	"message": "Expected to find ';'.",
+	"source": "dart",
+	"startLineNumber": 37,
+	"startColumn": 61,
+	"endLineNumber": 37,
+	"endColumn": 64,
+	"modelVersionId": 9
+},{
+	"resource": "/c:/Users/brian/screenpledge/lib/core/services/android_screen_time_service.dart",
 	"owner": "_generated_diagnostic_collection_name_#1",
 	"code": "unterminated_string_literal",
 	"severity": 8,
 	"message": "Unterminated string literal.",
 	"source": "dart",
-	"startLineNumber": 52,
-	"startColumn": 84,
-	"endLineNumber": 52,
-	"endColumn": 85,
-	"modelVersionId": 1
+	"startLineNumber": 37,
+	"startColumn": 63,
+	"endLineNumber": 37,
+	"endColumn": 64,
+	"modelVersionId": 9
 },{
-	"resource": "/C:/Users/brian/screenpledge/lib/features/dashboard/presentation/views/dashboard_page.dart",
-	"owner": "_generated_diagnostic_collection_name_#1",
-	"code": "expected_token",
-	"severity": 8,
-	"message": "Expected to find ','.",
-	"source": "dart",
-	"startLineNumber": 53,
-	"startColumn": 17,
-	"endLineNumber": 53,
-	"endColumn": 22,
-	"modelVersionId": 1
-},{
-	"resource": "/C:/Users/brian/screenpledge/lib/features/dashboard/presentation/views/dashboard_page.dart",
+	"resource": "/c:/Users/brian/screenpledge/lib/core/services/android_screen_time_service.dart",
 	"owner": "_generated_diagnostic_collection_name_#1",
 	"code": {
-		"value": "use_key_in_widget_constructors",
+		"value": "unused_local_variable",
 		"target": {
 			"$mid": 1,
-			"path": "/diagnostics/use_key_in_widget_constructors",
+			"path": "/diagnostics/unused_local_variable",
 			"scheme": "https",
 			"authority": "dart.dev"
 		}
 	},
-	"severity": 2,
-	"message": "Constructors for public widgets should have a named 'key' parameter.\nTry adding a named parameter to the constructor.",
+	"severity": 4,
+	"message": "The value of the local variable 'user' isn't used.\nTry removing the variable or using it.",
 	"source": "dart",
-	"startLineNumber": 8,
-	"startColumn": 7,
-	"endLineNumber": 8,
-	"endColumn": 20,
-	"modelVersionId": 1
+	"startLineNumber": 37,
+	"startColumn": 25,
+	"endLineNumber": 37,
+	"endColumn": 29,
+	"modelVersionId": 9
 },{
-	"resource": "/C:/Users/brian/screenpledge/lib/features/dashboard/presentation/views/dashboard_page.dart",
+	"resource": "/c:/Users/brian/screenpledge/lib/core/services/android_screen_time_service.dart",
 	"owner": "_generated_diagnostic_collection_name_#1",
 	"code": {
-		"value": "non_constant_identifier_names",
+		"value": "unused_local_variable",
 		"target": {
 			"$mid": 1,
-			"path": "/diagnostics/non_constant_identifier_names",
+			"path": "/diagnostics/unused_local_variable",
 			"scheme": "https",
 			"authority": "dart.dev"
 		}
 	},
-	"severity": 2,
-	"message": "The variable name 'DashboardPledgePendingPage' isn't a lowerCamelCase identifier.\nTry changing the name to follow the lowerCamelCase style.",
+	"severity": 4,
+	"message": "The value of the local variable 'not' isn't used.\nTry removing the variable or using it.",
 	"source": "dart",
-	"startLineNumber": 9,
-	"startColumn": 9,
-	"endLineNumber": 9,
-	"endColumn": 35,
-	"modelVersionId": 1
+	"startLineNumber": 37,
+	"startColumn": 34,
+	"endLineNumber": 37,
+	"endColumn": 37,
+	"modelVersionId": 9
 },{
-	"resource": "/C:/Users/brian/screenpledge/lib/features/dashboard/presentation/views/dashboard_page.dart",
+	"resource": "/c:/Users/brian/screenpledge/lib/core/services/android_screen_time_service.dart",
 	"owner": "_generated_diagnostic_collection_name_#1",
-	"code": "todo",
-	"severity": 2,
-	"message": "TODO: Implement navigation logic based on index",
+	"code": {
+		"value": "unused_local_variable",
+		"target": {
+			"$mid": 1,
+			"path": "/diagnostics/unused_local_variable",
+			"scheme": "https",
+			"authority": "dart.dev"
+		}
+	},
+	"severity": 4,
+	"message": "The value of the local variable 'permission' isn't used.\nTry removing the variable or using it.",
 	"source": "dart",
-	"startLineNumber": 22,
-	"startColumn": 8,
-	"endLineNumber": 22,
-	"endColumn": 55,
-	"modelVersionId": 1
+	"startLineNumber": 37,
+	"startColumn": 46,
+	"endLineNumber": 37,
+	"endColumn": 56,
+	"modelVersionId": 9
 }]

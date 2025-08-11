@@ -1,15 +1,33 @@
+// lib/features/onboarding_post/presentation/views/account_creation_page.dart
 
-import 'package:screenpledge/features/onboarding_post/presentation/views/user_survey_sequence.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:screenpledge/core/common_widgets/primary_button.dart';
 import 'package:screenpledge/core/config/theme/app_colors.dart';
+import 'package:screenpledge/features/onboarding_post/presentation/viewmodels/account_creation_viewmodel.dart';
+// ✅ ADDED: Import the new pages we'll be navigating to.
+import 'package:screenpledge/features/onboarding_post/presentation/views/congratulations_page.dart';
+import 'package:screenpledge/features/onboarding_post/presentation/views/verify_email_page.dart';
 
-class AccountCreationPage extends StatelessWidget {
+class AccountCreationPage extends ConsumerWidget {
   const AccountCreationPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final textTheme = Theme.of(context).textTheme;
+
+    final emailController = TextEditingController();
+    final passwordController = TextEditingController();
+
+    final viewModelState = ref.watch(accountCreationViewModelProvider);
+
+    ref.listen<AsyncValue<void>>(accountCreationViewModelProvider, (_, state) {
+      if (state is AsyncError) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(state.error.toString())),
+        );
+      }
+    });
 
     return Scaffold(
       body: SafeArea(
@@ -33,38 +51,62 @@ class AccountCreationPage extends StatelessWidget {
                 ),
                 const SizedBox(height: 48.0),
 
-                // Email Field
                 TextField(
-                  decoration: InputDecoration(
-                    labelText: 'Email',
-                  ),
+                  controller: emailController,
+                  decoration: const InputDecoration(labelText: 'Email'),
                   keyboardType: TextInputType.emailAddress,
                 ),
                 const SizedBox(height: 16.0),
 
-                // Password Field
                 TextField(
-                  decoration: InputDecoration(
-                    labelText: 'Password',
-                  ),
+                  controller: passwordController,
+                  decoration: const InputDecoration(labelText: 'Password'),
                   obscureText: true,
                 ),
                 const SizedBox(height: 32.0),
 
-                // Create Account Button
                 PrimaryButton(
-                  text: 'Create Account',
-                  onPressed: () {
-                    Navigator.of(context).pushReplacement(
-                      MaterialPageRoute(
-                        builder: (context) => const UserSurveySequence(),
-                      ),
-                    );
-                  },
+                  text: viewModelState.isLoading ? 'Creating...' : 'Create Account',
+                  onPressed: viewModelState.isLoading
+                      ? null
+                      : () async {
+                          final email = emailController.text.trim();
+                          // ✅ CHANGED: Capture the result from the ViewModel call.
+                          final result = await ref
+                              .read(accountCreationViewModelProvider.notifier)
+                              .signUpUser(
+                                email: email,
+                                password: passwordController.text.trim(),
+                              );
+
+                          // ✅ CHANGED: Implement conditional navigation based on the result.
+                          if (context.mounted) {
+                            switch (result) {
+                              case SignUpResult.successNeedsVerification:
+                                // For email/password, go to the verification page.
+                                Navigator.of(context).pushReplacement(
+                                  MaterialPageRoute(
+                                    builder: (context) => VerifyEmailPage(email: email),
+                                  ),
+                                );
+                                break;
+                              case SignUpResult.successVerified:
+                                // For OAuth, go directly to the congratulations page.
+                                Navigator.of(context).pushReplacement(
+                                  MaterialPageRoute(
+                                    builder: (context) => const CongratulationsPage(),
+                                  ),
+                                );
+                                break;
+                              case SignUpResult.failure:
+                                // Do nothing, the listener has already shown an error SnackBar.
+                                break;
+                            }
+                          }
+                        },
                 ),
                 const SizedBox(height: 24.0),
 
-                // Divider
                 const Row(
                   children: [
                     Expanded(child: Divider()),
@@ -76,14 +118,14 @@ class AccountCreationPage extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 24.0),
-
-                // OAuth Buttons
                 ElevatedButton.icon(
-                  icon: const Icon(Icons.g_mobiledata), // Placeholder for Google
+                  icon: const Icon(Icons.g_mobiledata), // TODO: Replace with Google icon
                   label: const Text('Continue with Google'),
-                  onPressed: () {},
+                  onPressed: () {
+                    // TODO: Call a new `signUpWithGoogle` method on the ViewModel.
+                  },
                   style: ElevatedButton.styleFrom(
-                    foregroundColor: AppColors.primaryText, 
+                    foregroundColor: AppColors.primaryText,
                     backgroundColor: Colors.white,
                     side: BorderSide(color: AppColors.inactive),
                   ),
@@ -92,15 +134,15 @@ class AccountCreationPage extends StatelessWidget {
                 ElevatedButton.icon(
                   icon: const Icon(Icons.apple),
                   label: const Text('Continue with Apple'),
-                  onPressed: () {},
-                   style: ElevatedButton.styleFrom(
-                    foregroundColor: Colors.white, 
+                  onPressed: () {
+                    // TODO: Call a new `signUpWithApple` method on the ViewModel.
+                  },
+                  style: ElevatedButton.styleFrom(
+                    foregroundColor: Colors.white,
                     backgroundColor: Colors.black,
                   ),
                 ),
                 const SizedBox(height: 48.0),
-
-                // Login Link
                 TextButton(
                   onPressed: () {
                     // TODO: Navigate to login page

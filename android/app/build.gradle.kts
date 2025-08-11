@@ -6,9 +6,10 @@ plugins {
 }
 
 android {
-    namespace = "com.example.screenpledge"
+    namespace = "com.screenpledge.app"
+    // ✅ FIX #1: Removed the typo 'f' from the end of this line.
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    ndkVersion = "27.0.12077973"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
@@ -20,10 +21,7 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.screenpledge"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
+        applicationId = "com.screenpledge.app"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
@@ -32,8 +30,6 @@ android {
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
         }
     }
@@ -41,4 +37,9 @@ android {
 
 flutter {
     source = "../.."
+}
+
+// ✅ FIX #2: The 'implementation' line is now correctly placed inside this 'dependencies' block.
+dependencies {
+    implementation("androidx.activity:activity-ktx:1.9.0")
 }

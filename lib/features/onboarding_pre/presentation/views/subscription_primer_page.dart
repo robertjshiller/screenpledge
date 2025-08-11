@@ -25,7 +25,10 @@ class SubscriptionPrimerPage extends StatelessWidget {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 24.0,
+                vertical: 16.0,
+              ),
               child: Text(
                 "People always say\n“time is more valuable than money.”\n\nBut while most wouldn’t casually waste money, we do the equivalent every day with our time, lost in endless scrolling.",
                 style: Theme.of(context).textTheme.bodyLarge,
@@ -33,7 +36,10 @@ class SubscriptionPrimerPage extends StatelessWidget {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 24.0,
+                vertical: 16.0,
+              ),
               child: Text(
                 "With ScreenPledge, you can...",
                 style: Theme.of(context).textTheme.headlineMedium,
@@ -68,7 +74,10 @@ class SubscriptionPrimerPage extends StatelessWidget {
               onChanged: null,
             ),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 24.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 24.0,
+                vertical: 24.0,
+              ),
               child: Text(
                 "Are you ready to reclaim what matters most—your time?",
                 style: Theme.of(context).textTheme.bodyLarge,
@@ -76,11 +85,19 @@ class SubscriptionPrimerPage extends StatelessWidget {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 24.0,
+                vertical: 16.0,
+              ),
               child: PrimaryButton(
                 text: "Reclaim My Time",
                 onPressed: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => const SubscriptionOfferPage()));
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const SubscriptionOfferPage(),
+                    ),
+                  );
                 },
               ),
             ),

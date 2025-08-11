@@ -1,6 +1,10 @@
+Of course. Here is the complete Master Development Document, updated with a new, detailed section that establishes the pure Clean Architecture workflow as the standard for all future development. This guide is designed to be the definitive reference for your team.
+
+---
+
 # ScreenPledge: The Definitive Master Development Document
 
-**Version:** 1.0  
+**Version:** 1.1  
 **Date:** August 1, 2025  
 **Project:** ScreenPledge – MVP
 
@@ -31,7 +35,7 @@ To empower individuals to reclaim their time and focus by creating a powerful, p
 
 The user journey is split into two distinct phases, managed by two separate features.
 
-#### **Phase A: Pre-Subscription** (`onboarding_pre` feature) [note: onboarding_pre refers to onboarding pre-subscription]
+#### **Phase A: Pre-Subscription** (`onboarding_pre` feature)
 *Goal: Convert an anonymous visitor into a trialist.*
 
 - **Get Started Page:** "Get Started" and "Log In" options.
@@ -39,43 +43,39 @@ The user journey is split into two distinct phases, managed by two separate feat
 - **Data Reveal Sequence:** Multi-part, animated screen showing the user's screen time percentage and "Top 3 Time Sinks" with app icons.
 - **Solution Page** A quick page explaining how money backed motivation is effective.
 - **How It Works Sequence:** 4-card carousel explaining the core loop: Pledge → Success → Accountability → Reward.
---**Subscription Primer:** A page where we prime the user for their subscription by getting 
-- **Subscription Offer Page:** Pricing page where the user commits to the 7-day free trial via native IAP. Moves them to the free trial explained. 
--**Free Trial Explained Page:** Explanation of free trial in 'blinkest' style paywall. We show them that we will notify them on day 5 of their trial. Reduces anxiety about signing up.
+- **Subscription Primer:** A page where we prime the user for their subscription.
+- **Subscription Offer Page:** Pricing page where the user commits to the 7-day free trial via native IAP.
+- **Free Trial Explained Page:** Explanation of free trial in 'Blinkist' style.
 
-#### **Phase B: Post-Subscription** (`onboarding_post` feature) [note: onboarding_post refers to onboarding post-subscription]
+#### **Phase B: Post-Subscription** (`onboarding_post` feature)
 *Goal: Get a new trialist fully configured.*
 
 - **Account Creation Page:** Shown immediately after trial activation. User creates account (Email/OAuth) and links it to subscription.
-- **User Survey Seuqence:** Short survey (age, occupation, purpose, attribution).
+- **User Survey Sequence:** Short survey (age, occupation, purpose, attribution).
 - **Goal Setting Page:** User defines their first daily goal (Total Time vs. Custom Group).
 - **Pledge Page:** Dedicated, persuasive screen for setting the Accountability Pledge.
-- **Notification Permission Dialog:** "Pre-permission" dialog shown after saving accountability. .
-
+- **Notification Permission Dialog:** "Pre-permission" dialog shown after saving accountability.
 
 ### 2.2. The Core Application
 
 #### **Dashboard** (`dashboard` feature)
-
-- **Dashboard Page** One unified dashboard with a corresponding viewmodel that will provide different states for the dashboard
+- **Dashboard Page:** One unified dashboard with a corresponding viewmodel that will provide different states for the dashboard.
 
 #### **Rewards Marketplace** (`rewards` feature)
-
 - **Unified, filterable marketplace**
 - **Pledge Tiers:** Progress bar for lifetime PP and progress to next tier (Bronze, Silver, etc.)
-- **Featured Section:** Carousel highlighting high-priority rewards (subscription redemption, partner offers)
-- **Main Grid:** All other rewards (gift cards, donations), showing "Locked" (tier-gated) and "Sold Out" states
+- **Featured Section:** Carousel highlighting high-priority rewards.
+- **Main Grid:** All other rewards (gift cards, donations).
 
 #### **Settings** (`settings` feature)
-
-- Sectioned list for managing Goal, Pledge, Subscription, Profile, and Communications
+- Sectioned list for managing Goal, Pledge, Subscription, Profile, and Communications.
 
 ### 2.3. The Modal System (Success/Failure)
 
 A mandatory, blocking modal appears on app launch to report the previous day's result.
 
-- **Success Modal:** Celebratory, shows PP earned and streak progress
-- **Failure Modal:** Empathetic, confirms the pledge was charged, resets streak. Copy adapts after 2–3 consecutive failures to offer help.
+- **Success Modal:** Celebratory, shows PP earned and streak progress.
+- **Failure Modal:** Empathetic, confirms the pledge was charged, resets streak.
 
 ---
 
@@ -89,21 +89,21 @@ A mandatory, blocking modal appears on app launch to report the previous day's r
 
 ### 3.2. The "Ungameable" Core Logic
 
-- **The “Next Day” Rule:** Any change to goal or pledge takes effect at the next midnight
-- **Revoke Permission:** Day is Failure, pledge is charged, accountability is paused for future days
-- **Delete Tracked App:** Day processed based on existing usage data before deletion
-- **Stripe Payment Fails:** Accountability immediately paused, notification sent
+- **The “Next Day” Rule:** Any change to goal or pledge takes effect at the next midnight.
+- **Revoke Permission:** Day is Failure, pledge is charged, accountability is paused.
+- **Delete Tracked App:** Day processed based on existing usage data.
+- **Stripe Payment Fails:** Accountability immediately paused.
 
 ### 3.3. The "Fairness" Protocols
 
-- **Reconciliation Protocol:** For users with a "sync gap" (offline, app deleted), history is reconciled upon return
-- **Forgiveness Rule:** Only the first day of failure in a sync gap backlog is charged
+- **Reconciliation Protocol:** For users with a "sync gap," history is reconciled upon return.
+- **Forgiveness Rule:** Only the first day of failure in a sync gap backlog is charged.
 
 ### 3.4. The Caching Strategy
 
-- **Primary:** Forced cache refresh on critical app events (app launch, success/failure, reward redemption)
-- **Safety Net:** Long TTL (24h) on local cache
-- **Instant Update:** Silent push notifications for time-sensitive reward releases, invalidating client cache
+- **Primary:** Forced cache refresh on critical app events.
+- **Safety Net:** Long TTL (24h) on local cache.
+- **Instant Update:** Silent push notifications for time-sensitive reward releases.
 
 ---
 
@@ -118,25 +118,238 @@ A mandatory, blocking modal appears on app launch to report the previous day's r
 
 ### 4.2. Architecture: Feature-First Clean Architecture
 
-- Codebase organized into a `core` folder for shared code, and `features` folders for modular user-facing verticals
-- Strict separation of concerns; dependencies point inward
+- Codebase organized into a `core` folder for shared code, and `features` folders for modular user-facing verticals.
+- Strict separation of concerns; dependencies point inward.
 
 ### 4.3. State Management: Riverpod
 
-- **Services/Repositories:** Provided via Providers in `core`
-- **UI State:** Managed by Notifiers within each feature's `presentation/viewmodels/` directory
+- **Services/Repositories:** Provided via Providers in `core` or feature-specific `di/` folders.
+- **UI State:** Managed by Notifiers within each feature's `presentation/viewmodels/` directory.
 
 ### 4.4. Platform-Specific Code (iOS vs. Android)
 
-- **Abstraction Layer:** Pure Dart `ScreenTimeService` defined in `core`
-- **Native Implementation:**  
-  - iOS: Swift using DeviceActivity  
-  - Android: Kotlin using UsageStatsManager  
-  - Connected via Flutter's Platform Channels
+- **Abstraction Layer:** Pure Dart `ScreenTimeService` defined in `core`.
+- **Native Implementation:** Swift (DeviceActivity) and Kotlin (UsageStatsManager) connected via Platform Channels.
 
-### 4.5. Database Schema
+---
 
-```sql
+## 5. The Clean Architecture Workflow: A Developer's Guide
+
+This section is the **source of truth** for building new features. Adhering to this workflow ensures our codebase remains modular, testable, and maintainable.
+
+### 5.1. Guiding Principles
+
+The entire architecture is governed by one rule: **The Dependency Rule**. Dependencies must only point **inwards**.
+
+```
++-----------------------------------------------------------------+
+|  PRESENTATION (Flutter Widgets, ViewModels)                     |
+|        Depends on -> [ Domain Layer ]                           |
+|-----------------------------------------------------------------|
+|  DOMAIN (Pure Dart Business Logic)                              |
+|       - Use Cases (e.g., GetUserProfile)                        |
+|       - Repository Contracts (e.g., abstract class IProfileRepository) |
+|       - Entities (e.g., Profile)                                |
+|       -> Depends on NOTHING                                     |
+|-----------------------------------------------------------------|
+|  DATA (Implementations & External Tools)                        |
+|       Depends on -> [ Domain Layer ]                            |
+|       - Repository Implementations (e.g., ProfileRepositoryImpl)|
+|       - DataSources (e.g., SupabaseProfileDataSource)           |
++-----------------------------------------------------------------+
+```
+
+-   **Domain Layer:** The center of the universe. It contains pure Dart code defining the business rules (`UseCases`), data structures (`Entities`), and data access contracts (`Repository Contracts`). It knows nothing about the outside world.
+-   **Data Layer:** The implementation layer. It provides concrete implementations of the Repository Contracts, using `DataSources` to talk to external services like Supabase and RevenueCat. It translates raw data into Domain Entities.
+-   **Presentation Layer:** The UI layer. It contains Flutter widgets (`Views`) and state management logic (`ViewModels`). It triggers business logic by calling `UseCases` and displays the results.
+
+### 5.2. The Feature Development Blueprint
+
+Follow these 8 steps **in order** when building a new feature vertical (e.g., `rewards`, `settings`).
+
+> **Scenario:** We are building a new feature to fetch and display a list of `Reward` items.
+
+---
+
+#### **Phase 1: Define the Business Logic (The Domain Layer)**
+
+*Location: `lib/features/your_feature/domain/`*
+
+1.  **Create the Entity:** Define the pure Dart class that represents the core business object. It should be simple, with no external dependencies.
+
+    *File: `.../domain/entities/reward.dart`*
+    ```dart
+    class Reward {
+      final String id;
+      final String name;
+      final int ppCost;
+      // ... other fields
+      Reward({required this.id, required this.name, ...});
+    }
+    ```
+
+2.  **Create the Repository Contract:** Define the abstract class (the "interface") that specifies *what* data operations are required for this feature.
+
+    *File: `.../domain/repositories/reward_repository.dart`*
+    ```dart
+    import '.../entities/reward.dart';
+
+    abstract class IRewardRepository {
+      Future<List<Reward>> getAvailableRewards();
+      Future<void> redeemReward(String rewardId);
+    }
+    ```
+
+3.  **Create the Use Case(s):** Create a separate class for each individual user action. Each use case should have a single public method, typically named `call`.
+
+    *File: `.../domain/usecases/get_available_rewards.dart`*
+    ```dart
+    import '.../repositories/reward_repository.dart';
+
+    class GetAvailableRewards {
+      final IRewardRepository _repository;
+      GetAvailableRewards(this._repository);
+
+      Future<List<Reward>> call() async {
+        return await _repository.getAvailableRewards();
+      }
+    }
+    ```
+
+---
+
+#### **Phase 2: Implement the Data Handling (The Data Layer)**
+
+*Location: `lib/features/your_feature/data/`*
+
+4.  **Create the DataSource:** This class is responsible for making the actual API/database call. It deals with raw data (e.g., JSON) and external SDKs.
+
+    *File: `.../data/datasources/reward_remote_datasource.dart`*
+    ```dart
+    // This class would use the Supabase client.
+    class RewardRemoteDataSource {
+      // ... Supabase client setup
+      Future<List<Map<String, dynamic>>> fetchRewardsFromDB() async {
+        // final data = await supabase.from('rewards').select();
+        // return data;
+      }
+    }
+    ```
+
+5.  **Implement the Repository:** Create the concrete implementation of the Domain contract. Its job is to call the DataSource, get the raw data, transform it into a Domain Entity, and return it.
+
+    *File: `.../data/repositories/reward_repository_impl.dart`*
+    ```dart
+    import '.../datasources/reward_remote_datasource.dart';
+    import '.../domain/entities/reward.dart';
+    import '.../domain/repositories/reward_repository.dart';
+
+    class RewardRepositoryImpl implements IRewardRepository {
+      final RewardRemoteDataSource _remoteDataSource;
+      RewardRepositoryImpl(this._remoteDataSource);
+
+      @override
+      Future<List<Reward>> getAvailableRewards() async {
+        final rawData = await _remoteDataSource.fetchRewardsFromDB();
+        // Map the raw JSON/Map into a list of Reward entities.
+        return rawData.map((json) => Reward.fromJson(json)).toList();
+      }
+      // ... implement other methods
+    }
+    ```
+
+---
+
+#### **Phase 3: Connect the Layers (Dependency Injection)**
+
+*Location: `lib/features/your_feature/di/`*
+
+6.  **Create the Riverpod Providers:** Wire everything together so Riverpod knows how to build the classes. The dependency chain is crucial.
+
+    *File: `.../di/reward_providers.dart`*
+    ```dart
+    import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+    // 1. DataSource Provider
+    final rewardRemoteDataSourceProvider = Provider((ref) => RewardRemoteDataSource());
+
+    // 2. Repository Provider (depends on DataSource)
+    final rewardRepositoryProvider = Provider<IRewardRepository>((ref) {
+      final dataSource = ref.read(rewardRemoteDataSourceProvider);
+      return RewardRepositoryImpl(dataSource);
+    });
+
+    // 3. UseCase Provider (depends on Repository)
+    final getAvailableRewardsUseCaseProvider = Provider((ref) {
+      final repository = ref.read(rewardRepositoryProvider);
+      return GetAvailableRewards(repository);
+    });
+    ```
+
+---
+
+#### **Phase 4: Build the User Interface (The Presentation Layer)**
+
+*Location: `lib/features/your_feature/presentation/`*
+
+7.  **Create the ViewModel:** This class manages the UI state and contains the UI logic. It **only** depends on Use Cases.
+
+    *File: `.../presentation/viewmodels/rewards_viewmodel.dart`*
+    ```dart
+    import 'package:flutter_riverpod/flutter_riverpod.dart';
+    import '.../domain/usecases/get_available_rewards.dart';
+
+    class RewardsViewModel extends StateNotifier<AsyncValue<List<Reward>>> {
+      final GetAvailableRewards _getAvailableRewards;
+      RewardsViewModel(this._getAvailableRewards) : super(const AsyncValue.loading()) {
+        fetchRewards();
+      }
+
+      Future<void> fetchRewards() async {
+        state = const AsyncValue.loading();
+        try {
+          final rewards = await _getAvailableRewards();
+          state = AsyncValue.data(rewards);
+        } catch (e, st) {
+          state = AsyncValue.error(e, st);
+        }
+      }
+    }
+
+    // ViewModel Provider (depends on UseCase)
+    final rewardsViewModelProvider = StateNotifierProvider((ref) {
+      final getRewards = ref.read(getAvailableRewardsUseCaseProvider);
+      return RewardsViewModel(getRewards);
+    });
+    ```
+
+8.  **Create the View:** This is the "dumb" Flutter widget. It watches the ViewModel provider and rebuilds itself based on the state (`AsyncValue`'s `when` method is perfect for this). It forwards user actions to the ViewModel.
+
+    *File: `.../presentation/views/rewards_page.dart`*
+    ```dart
+    import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+    class RewardsPage extends ConsumerWidget {
+      @override
+      Widget build(BuildContext context, WidgetRef ref) {
+        final state = ref.watch(rewardsViewModelProvider);
+
+        return state.when(
+          loading: () => const CircularProgressIndicator(),
+          error: (err, st) => Text('Error: $err'),
+          data: (rewards) => ListView.builder(
+            itemCount: rewards.length,
+            itemBuilder: (context, index) => Text(rewards[index].name),
+          ),
+        );
+      }
+    }
+    ```
+
+---
+
+## 6. Database Schema
+
 -- ScreenPledge Database Schema v1.0
 -- Author: Gemini AI
 -- Date: August 1, 2025
@@ -169,6 +382,7 @@ CREATE TABLE public.profiles (
   streak_count integer NOT NULL DEFAULT 0,
   accountability_status public.accountability_status NOT NULL DEFAULT 'inactive',
   accountability_amount_cents integer NOT NULL DEFAULT 0,
+  revenuecat_app_user_id text UNIQUE;
   stripe_customer_id text UNIQUE,
   user_timezone text NOT NULL,
   show_contextual_tips boolean NOT NULL DEFAULT true,
@@ -309,12 +523,12 @@ USING (is_active = true AND auth.role() = 'authenticated');
 -- =================================================================
 
 CREATE OR REPLACE FUNCTION public.handle_updated_at()
-RETURNS TRIGGER AS $
+RETURNS TRIGGER AS $$
 BEGIN
   NEW.updated_at = now();
   RETURN NEW;
 END;
-$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql;
 
 CREATE TRIGGER on_profiles_updated
   BEFORE UPDATE ON public.profiles
@@ -327,152 +541,38 @@ CREATE TRIGGER on_goals_updated
 CREATE TRIGGER on_rewards_updated
   BEFORE UPDATE ON public.rewards
   FOR EACH ROW EXECUTE PROCEDURE public.handle_updated_at();
+## 7. Directory Structure
+
 ```
-
-### 4.6. Directory Structure
 # ScreenPledge: Architectural Overview & Directory Guide
-
-**Version:** 1.0  
-**Date:** August 1, 2025
-
----
 
 ## 1. Introduction: Our Architectural Philosophy
 
-This project is built upon a **Feature-First Clean Architecture**—a modern, scalable approach designed to enforce a strict separation of concerns.
-
-### Core Principles
-
-- **The Dependency Rule:**  
-  Inner layers must not know about outer layers. Dependencies always point inward, making business logic independent of UI and database.
-
-- **Feature-First Organization:**  
-  Files are grouped by feature (e.g., `dashboard`, `rewards`) rather than by type. Each "vertical slice" is modular, self-contained, and easy to manage.
-
-- **Separation of Concerns:**  
-  The architecture is divided into three primary layers:
-  - **Presentation:** The UI layer (what the user sees).
-  - **Domain:** The business logic layer (the rules of the app).
-  - **Data:** The data access layer (how we talk to the outside world).
-
-This document walks through the directory structure, explaining the role of each component within this architectural framework.
-
----
+This project is built upon a **Feature-First Clean Architecture**—a modern, scalable approach designed to enforce a strict separation of concerns, as detailed in Section 5.
 
 ## 2. The `lib/` Directory: The Root of the Application
 
-The `lib/` folder is the heart of the Flutter project. It is organized into two primary directories: `core/` and `features/`.
-
-- **`main.dart`**  
-  The entry point of the application. Responsibilities:
-  - Initialize services (like Supabase)
-  - Set up the root Riverpod `ProviderScope`
-  - Run the main `App` widget
-
----
+- **`main.dart`**: Entry point. Initializes services, sets up `ProviderScope`.
 
 ## 3. The `core/` Directory: The Shared Foundation
 
-The `core/` folder contains all foundational, shared code required by multiple, unrelated features. It is the stable center of the application.
+Contains foundational, shared code. If a repository or entity is used by more than one unrelated feature, it lives here.
 
-- **`config/`**  
-  App-wide configuration.
-
-- **`router/app_router.dart`**  
-  Defines all navigation routes using GoRouter. Single source of truth for navigation.
-
-- **`theme/`**
-  - `app_colors.dart`: Const Color definitions for the app's palette.
-  - `app_theme.dart`: Defines the main `ThemeData`, including typography.
-
-- **`data/`**  
-  Concrete data implementations for universal entities.
-
-- **`models/`**  
-  Data Transfer Objects (DTOs) for universal entities. Classes like `UserModel`, `GoalModel` with `fromJson` methods.
-
-- **`datasources/`**  
-  Specialist classes that make network calls (e.g., `UserRemoteDataSource` for Supabase profiles).
-
-- **`repositories/`**  
-  `RepositoryImpl` classes (e.g., `UserRepositoryImpl`) that implement abstract contracts from `core/domain`. Coordinate data sources and transform Models into Entities.
-
-- **`domain/`**
-  - `entities/`: Pure Dart classes representing business objects (e.g., `User`, `Goal`).
-  - `repositories/`: Abstract "contracts" defining data layer requirements (e.g., `UserRepository`).
-
-- **`di/service_locator.dart`**  
-  The Dependency Injection hub. Global Riverpod Provider definitions for services and repositories.
-
-- **`error/`**  
-  App’s error handling model with custom `Exception` and `Failure` classes.
-
-- **`common_widgets/`**  
-  Universal, reusable UI components not tied to any specific feature (e.g., `PrimaryButton`, `InputField`).
-
----
+- **`config/`**: App-wide configuration (router, theme).
+- **`data/`**: Shared `RepositoryImpl` classes and `DataSources`.
+- **`domain/`**: Shared `Entities` and `Repository Contracts`.
+- **`di/`**: Global Riverpod `Providers` for core services.
+- **`common_widgets/`**: Universal, reusable UI components.
 
 ## 4. The `features/` Directory: Modular Verticals
 
-Contains all user-facing, vertical slices of the app. Each feature is a self-contained module.
+Contains all user-facing, vertical slices of the app. Each feature is a self-contained module following the blueprint in Section 5.
 
-### Example Feature Modules
+- **`onboarding_pre_subscription/`**
+- **`onboarding_post_subscription/`**
+- **`dashboard/`**
+- **`rewards/`**
+- **`settings/`**
 
----
-
-#### `onboarding_pre_subscription/`
-- **Purpose:**  
-  Manages the anonymous user journey from first launch to starting a trial.
-
-- **Key Folders:**
-  - `domain/usecases/`: Use cases like `GetWeeklyScreenTimeData`.
-  - `presentation/`
-    - `viewmodels/onboarding_pre_viewmodel.dart`: Riverpod Notifier for pre-subscription state.
-    - `views/`: Screens for this funnel (`GetStartedPage`, `PermissionPage`, etc.).
-
----
-
-#### `onboarding_post_subscription/`
-- **Purpose:**  
-  Manages mandatory setup for a new, subscribed user.
-
-- **Key Folders:**
-  - `data/` & `domain/`: Owns `UserSurvey` entity, includes layers for backend data saving.
-  - `presentation/`: Setup screens (`AccountCreationPage`, `UserQuestionnairePage`, `GoalSettingPage`, etc.) and their ViewModel.
-
----
-
-#### `dashboard/`
-- **Purpose:**  
-  Main "home" screen for active users.
-
-- **Key Folders:**
-  - `domain/usecases/`: Use cases like `GetDashboardData`.
-  - `presentation/`
-    - `viewmodels/dashboard_viewmodel.dart`: State management for dashboard.
-    - `views/`: Pages such as `...GoalPending` and `...GoalActive`.
-    - `widgets/`: Complex, feature-specific widgets (`ProgressRing`, `WeeklyProgressChart`).
-
----
-
-#### `rewards/`
-- **Purpose:**  
-  Self-contained Rewards Marketplace.
-
-- **Key Folders:**
-  - `data/` & `domain/`: Owns `Reward` entity and related logic.
-  - `presentation/`: `RewardsPage`, its ViewModel, and widgets (`TierProgressBar`, `RewardCard`).
-
----
-
-#### `settings/`
-- **Purpose:**  
-  Hub for user-facing app management.
-
-- **Key Folders:**
-  - `domain/usecases/`: Use cases like `PausePledge`.
-  - `presentation/`: Main `SettingsPage` and sub-pages (`ManagePledgePage`, `CommunicationsPage`, etc.).
-
----
-
-
+Each feature folder contains its own `data`, `domain`, and `presentation` layers, specific to that feature.
+```
