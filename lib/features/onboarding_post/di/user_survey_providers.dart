@@ -1,7 +1,6 @@
-// lib/features/onboarding_post/di/user_survey_providers.dart
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:screenpledge/core/di/auth_providers.dart'; // To get the SupabaseClient
+import 'package:screenpledge/core/di/auth_providers.dart';
+import 'package:screenpledge/core/di/profile_providers.dart'; // ✅ ADDED
 import 'package:screenpledge/features/onboarding_post/data/datasources/user_survey_remote_datasource.dart';
 import 'package:screenpledge/features/onboarding_post/data/repositories/user_survey_repository_impl.dart';
 import 'package:screenpledge/features/onboarding_post/domain/repositories/user_survey_repository.dart';
@@ -18,6 +17,10 @@ final userSurveyRepositoryProvider = Provider<IUserSurveyRepository>((ref) {
 });
 
 // 3. DOMAIN Layer Provider: Provides the use case.
+// ✅ CHANGED: The provider now also reads the 'updateOnboardingStatusUseCaseProvider'
+// and injects it into the SaveUserSurvey use case.
 final saveUserSurveyUseCaseProvider = Provider<SaveUserSurvey>((ref) {
-  return SaveUserSurvey(ref.read(userSurveyRepositoryProvider));
+  final surveyRepository = ref.read(userSurveyRepositoryProvider);
+  final updateOnboardingStatusUseCase = ref.read(updateOnboardingStatusUseCaseProvider);
+  return SaveUserSurvey(surveyRepository, updateOnboardingStatusUseCase);
 });

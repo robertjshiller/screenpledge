@@ -3,7 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart'; // ✅ ADDED: Required for Riverpod state management.
 import 'package:screenpledge/core/config/theme/app_theme.dart';
-import 'package:screenpledge/features/onboarding_pre/presentation/views/get_started_page.dart';
+import 'package:screenpledge/features/auth/presentation/views/auth_gate.dart'; // ✅ ADDED: The new entry point.
 import 'package:screenpledge/core/data/datasources/revenuecat_remote_datasource.dart';
 import 'package:supabase_flutter/supabase_flutter.dart'; // ✅ ADDED: The official Supabase Flutter SDK.
 import 'package:flutter_dotenv/flutter_dotenv.dart'; // ✅ ADDED: The package to read .env files.
@@ -95,10 +95,10 @@ class ScreenPledgeApp extends StatelessWidget {
       // to ensure a consistent look and feel across all screens.
       theme: AppTheme.themeData,
 
-      // The home property defines the default screen (or "route") of the app.
-      // By setting this to `GetStartedPage`, we ensure that all users will
-      // land on this screen when they first open the app.
-      home: const GetStartedPage(),
+      // The home property now points to the AuthGate.
+      // The AuthGate will handle the logic to decide which screen to show
+      // based on the user's authentication and onboarding status.
+      home: const AuthGate(),
 
       // This removes the "debug" banner from the top-right corner of the app.
       debugShowCheckedModeBanner: false,

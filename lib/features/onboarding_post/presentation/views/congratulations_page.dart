@@ -3,7 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:screenpledge/core/common_widgets/primary_button.dart';
 import 'package:screenpledge/core/config/theme/app_colors.dart';
-import 'package:screenpledge/features/onboarding_post/presentation/views/user_survey_sequence.dart';
+import 'package:screenpledge/features/onboarding_post/presentation/views/user_survey_page.dart';
 
 /// A celebratory page shown after a user has successfully created and
 /// verified their account.

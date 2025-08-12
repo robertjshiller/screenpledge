@@ -1,23 +1,31 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart'; // ✅ ADDED: Riverpod for state management.
 import 'package:screenpledge/core/common_widgets/primary_button.dart';
 import 'package:screenpledge/core/config/theme/app_colors.dart';
-import 'package:screenpledge/features/onboarding_post/presentation/views/pledge_page.dart'; // Import PledgePage
+import 'package:screenpledge/core/domain/entities/installed_app.dart';
+import 'package:screenpledge/features/onboarding_post/presentation/viewmodels/goal_setting_viewmodel.dart'; // ✅ ADDED: The ViewModel for this page.
+import 'package:screenpledge/features/onboarding_post/presentation/views/app_selection_page.dart';
+import 'package:screenpledge/features/onboarding_post/presentation/views/pledge_page.dart';
 
-// This is the main widget for the Goal Setting screen.
-class GoalSettingPage extends StatefulWidget {
+// ✅ CHANGED: Converted to a ConsumerStatefulWidget to use Riverpod for state management.
+class GoalSettingPage extends ConsumerStatefulWidget {
   const GoalSettingPage({super.key});
 
   @override
-  State<GoalSettingPage> createState() => _GoalSettingPageState();
+  ConsumerState<GoalSettingPage> createState() => _GoalSettingPageState();
 }
 
-class _GoalSettingPageState extends State<GoalSettingPage> {
+class _GoalSettingPageState extends ConsumerState<GoalSettingPage> {
+  // These remain as local UI state, managed by the widget itself.
   bool _isTotalTimeSelected = true;
   Duration _selectedTime = const Duration(hours: 3, minutes: 15);
+  Set<InstalledApp> _exemptApps = {};
+  Set<InstalledApp> _trackedApps = {};
 
   /* ───────────────────────── TIME-PICKER DIALOG ───────────────────────── */
 
+  // This method remains unchanged.
   void _showTimePicker() {
     Duration tempDuration = _selectedTime;
 
@@ -41,7 +49,7 @@ class _GoalSettingPageState extends State<GoalSettingPage> {
             CupertinoDialogAction(
               child: Text(
                 'Cancel',
-                style: TextStyle(color: AppColors.primaryText), // Set text color
+                style: TextStyle(color: AppColors.primaryText),
               ),
               onPressed: () {
                 Navigator.of(context).pop();
@@ -51,7 +59,7 @@ class _GoalSettingPageState extends State<GoalSettingPage> {
               isDefaultAction: true,
               child: Text(
                 'OK',
-                style: TextStyle(color: AppColors.primaryText), // Set text color
+                style: TextStyle(color: AppColors.primaryText),
               ),
               onPressed: () {
                 setState(() {
@@ -66,11 +74,62 @@ class _GoalSettingPageState extends State<GoalSettingPage> {
     );
   }
 
+  // This method remains unchanged.
+  Future<void> _selectApps({
+    required String title,
+    required Set<InstalledApp> currentSelection,
+    required void Function(Set<InstalledApp>) onUpdate,
+  }) async {
+    final result = await Navigator.of(context).push<Set<InstalledApp>>(
+      MaterialPageRoute(
+        builder: (context) => AppSelectionPage(
+          title: title,
+          initialSelection: currentSelection,
+        ),
+        fullscreenDialog: true,
+      ),
+    );
+    if (result != null) {
+      setState(() {
+        onUpdate(result);
+      });
+    }
+  }
+
   /* ────────────────────────────── UI BUILD ────────────────────────────── */
 
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+
+    // ✅ ADDED: Watch the ViewModel's state for loading/error status.
+    final viewModelState = ref.watch(goalSettingViewModelProvider);
+
+    // ✅ ADDED: A listener to react to state changes (e.g., success or error).
+    ref.listen<AsyncValue<void>>(goalSettingViewModelProvider, (previous, next) {
+      next.whenOrNull(
+        error: (error, stackTrace) {
+          // On error, show a SnackBar.
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error saving goal: ${error.toString()}'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        },
+        data: (_) {
+          // On success (when state goes from loading back to data), navigate.
+          // The check `previous?.isLoading == true` ensures this only triggers
+          // after a successful save operation.
+          if (previous?.isLoading == true) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const PledgePage()),
+            );
+          }
+        },
+      );
+    });
 
     return Scaffold(
       appBar: AppBar(),
@@ -100,18 +159,14 @@ class _GoalSettingPageState extends State<GoalSettingPage> {
                 description: 'Hold yourself accountable for your entire daily phone usage.',
                 isSelected: _isTotalTimeSelected,
                 onTap: () => setState(() => _isTotalTimeSelected = true),
-                child: Column(
-                  children: [
-                    const SizedBox(height: 12),
-                    Divider(color: AppColors.inactive.withAlpha(100)),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Exempt Apps',
-                      style: textTheme.labelLarge?.copyWith(
-                        color: AppColors.primaryText,
-                      ),
-                    ),
-                  ],
+                child: _AppSelectionButton(
+                  label: 'Exempt Apps',
+                  count: _exemptApps.length,
+                  onPressed: () => _selectApps(
+                    title: 'Select Exempt Apps',
+                    currentSelection: _exemptApps,
+                    onUpdate: (updatedApps) => _exemptApps = updatedApps,
+                  ),
                 ),
               ),
               const SizedBox(height: 16),
@@ -120,18 +175,14 @@ class _GoalSettingPageState extends State<GoalSettingPage> {
                 description: 'Target only your biggest distractions.',
                 isSelected: !_isTotalTimeSelected,
                 onTap: () => setState(() => _isTotalTimeSelected = false),
-                child: Column(
-                  children: [
-                    const SizedBox(height: 12),
-                    Divider(color: AppColors.inactive.withAlpha(100)),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Select Apps & Categories',
-                      style: textTheme.labelLarge?.copyWith(
-                        color: AppColors.primaryText,
-                      ),
-                    ),
-                  ],
+                child: _AppSelectionButton(
+                  label: 'Select Apps & Categories',
+                  count: _trackedApps.length,
+                  onPressed: () => _selectApps(
+                    title: 'Select Apps to Track',
+                    currentSelection: _trackedApps,
+                    onUpdate: (updatedApps) => _trackedApps = updatedApps,
+                  ),
                 ),
               ),
               const SizedBox(height: 48),
@@ -148,14 +199,19 @@ class _GoalSettingPageState extends State<GoalSettingPage> {
 
               // ----- Save button -----
               PrimaryButton(
-                text: 'Save Goal',
-                onPressed: () {
-                  // Navigate to the PledgePage using Navigator.push
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const PledgePage()),
-                  );
-                },
+                // ✅ CHANGED: Button text and onPressed logic now driven by the ViewModel.
+                text: viewModelState.isLoading ? 'Saving...' : 'Save Goal',
+                onPressed: viewModelState.isLoading
+                    ? null // Disable button while loading.
+                    : () {
+                        // Call the ViewModel method, passing in the current UI state.
+                        ref.read(goalSettingViewModelProvider.notifier).saveGoal(
+                              isTotalTime: _isTotalTimeSelected,
+                              timeLimit: _selectedTime,
+                              exemptApps: _exemptApps,
+                              trackedApps: _trackedApps,
+                            );
+                      },
               ),
               const SizedBox(height: 24),
             ],
@@ -167,6 +223,7 @@ class _GoalSettingPageState extends State<GoalSettingPage> {
 }
 
 /* ────────────────────────── GOAL-TYPE CARD ────────────────────────── */
+// This widget's implementation remains unchanged.
 class _GoalTypeCard extends StatelessWidget {
   final String title;
   final String description;
@@ -233,7 +290,69 @@ class _GoalTypeCard extends StatelessWidget {
   }
 }
 
+/* ─────────────────── APP SELECTION BUTTON ─────────────────── */
+// This widget's implementation remains unchanged.
+class _AppSelectionButton extends StatelessWidget {
+  final String label;
+  final int count;
+  final VoidCallback onPressed;
+
+  const _AppSelectionButton({
+    required this.label,
+    required this.count,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        const SizedBox(height: 12),
+        Divider(color: AppColors.inactive.withAlpha(100)),
+        const SizedBox(height: 8),
+        TextButton(
+          style: TextButton.styleFrom(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          ),
+          onPressed: onPressed,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                label,
+                style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      color: AppColors.primaryText,
+                      fontWeight: FontWeight.w600,
+                    ),
+              ),
+              Row(
+                children: [
+                  if (count > 0)
+                    Text(
+                      '$count selected',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: AppColors.inactive,
+                          ),
+                    ),
+                  const SizedBox(width: 8),
+                  Icon(
+                    Icons.arrow_forward_ios,
+                    size: 16,
+                    color: AppColors.inactive,
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 /* ────────────────────────── TIME DISPLAY ────────────────────────── */
+// This widget's implementation remains unchanged.
 class _TimeDisplay extends StatelessWidget {
   final Duration time;
   final VoidCallback onTap;
@@ -254,22 +373,22 @@ class _TimeDisplay extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: AppColors.inactive, width: 1.5),
         ),
-        child: Stack( // Changed to Stack
-          alignment: Alignment.center, // Center the content of the Stack
+        child: Stack(
+          alignment: Alignment.center,
           children: [
             Text(
               '${hours}h ${minutes}m',
-              style: Theme.of(context).textTheme.displayLarge, // Using displayLarge
-              textAlign: TextAlign.center, // Ensure text is centered within its own space
+              style: Theme.of(context).textTheme.displayLarge,
+              textAlign: TextAlign.center,
             ),
             Align(
-              alignment: Alignment.centerRight, // Position the icon to the right
+              alignment: Alignment.centerRight,
               child: CupertinoButton(
-                padding: EdgeInsets.zero, // Remove default padding
+                padding: EdgeInsets.zero,
                 onPressed: onTap,
                 child: Icon(
                   Icons.edit,
-                  color: AppColors.primaryText, // Set icon color
+                  color: AppColors.primaryText,
                 ),
               ),
             ),
