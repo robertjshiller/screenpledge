@@ -96,67 +96,75 @@ class _PermissionPageState extends ConsumerState<PermissionPage> with WidgetsBin
 
     return Scaffold(
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              const Spacer(flex: 2),
-              Text(
-                'Let\'s Keep You \nFocused',
-                style: Theme.of(context).textTheme.displayLarge,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 32),
-              Image.asset(
-                'assets/mascot/mascot_thumbs_up.png',
-                width: MediaQuery.of(context).size.width * 0.75,
-              ),
-              const SizedBox(height: 32),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 22.0),
-                child: Text(
-                  'To help you build better habits, ScreenPledge needs permission to view your screen time stats. Your data is always kept private and secure.',
-                  style: Theme.of(context).textTheme.bodyLarge,
-                  textAlign: TextAlign.center,
-                ),
-              ),
-              const Spacer(flex: 3),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 56),
-                child: Column(
-                  children: [
-                    SizedBox(
-                      width: double.infinity,
-                      child: PrimaryButton(
-                        text: viewModelState.isLoading ? 'Opening Settings...' : 'Allow Screen Time Access',
-                        onPressed: viewModelState.isLoading
-                            ? null
-                            : () async {
-                                // ✅ REWORKED: This is the "Fire" step.
-                                // 1. Set our flag so the lifecycle observer knows to run the check.
-                                _isAwaitingPermissionResult = true;
-
-                                // 2. Call the ViewModel to open the settings screen.
-                                await ref.read(permissionViewModelProvider.notifier).openSettings();
-
-                                // 3. That's it. We do not await a result. The "Re-Check" logic
-                                // is now handled entirely by didChangeAppLifecycleState.
-                              },
+        child: Column(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      const SizedBox(height: 40), // Added for top padding
+                      Text(
+                        'Let\'s Keep You \nFocused',
+                        style: Theme.of(context).textTheme.displayLarge,
+                        textAlign: TextAlign.center,
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'We only see app usage time -- never your content',
-                      style: Theme.of(context).textTheme.bodySmall,
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 24),
-                  ],
+                      const SizedBox(height: 32),
+                      Image.asset(
+                        'assets/mascot/mascot_thumbs_up.png',
+                        width: MediaQuery.of(context).size.width * 0.75,
+                      ),
+                      const SizedBox(height: 32),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 22.0),
+                        child: Text(
+                          'To help you build better habits, ScreenPledge needs permission to view your screen time stats. Your data is always kept private and secure.',
+                          style: Theme.of(context).textTheme.bodyLarge,
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                      const SizedBox(height: 20), // Added for bottom padding
+                    ],
+                  ),
                 ),
               ),
-            ],
-          ),
+            ),
+            // This is the "sticky" bottom part
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 12, 24, 32), // Adjusted padding
+              child: Column(
+                children: [
+                  SizedBox(
+                    width: double.infinity,
+                    child: PrimaryButton(
+                      text: viewModelState.isLoading ? 'Opening Settings...' : 'Allow Screen Time Access',
+                      onPressed: viewModelState.isLoading
+                          ? null
+                          : () async {
+                              // ✅ REWORKED: This is the "Fire" step.
+                              // 1. Set our flag so the lifecycle observer knows to run the check.
+                              _isAwaitingPermissionResult = true;
+
+                              // 2. Call the ViewModel to open the settings screen.
+                              await ref.read(permissionViewModelProvider.notifier).openSettings();
+
+                              // 3. That's it. We do not await a result. The "Re-Check" logic
+                              // is now handled entirely by didChangeAppLifecycleState.
+                            },
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'We only see app usage time -- never your content',
+                    style: Theme.of(context).textTheme.bodySmall,
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );

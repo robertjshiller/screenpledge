@@ -133,89 +133,108 @@ class _GoalSettingPageState extends ConsumerState<GoalSettingPage> {
 
     return Scaffold(
       appBar: AppBar(),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const SizedBox(height: 16),
-              Text(
-                'Set Your Goal',
-                style: textTheme.displayLarge?.copyWith(fontSize: 28),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Choose what to track and set your daily screen time limit',
-                style: textTheme.bodyLarge,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 32),
+      body: SafeArea(
+        // This pattern allows the use of Spacers for proportional layout
+        // while ensuring the content can scroll if it overflows, for example
+        // when the keyboard is displayed on a small screen.
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  minHeight: constraints.maxHeight,
+                ),
+                child: IntrinsicHeight(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const Spacer(flex: 1), // Replaced SizedBox(height: 16)
+                        Text(
+                          'Set Your Goal',
+                          style: textTheme.displayLarge?.copyWith(fontSize: 28),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Choose what to track and set your daily screen time limit',
+                          style: textTheme.bodyLarge,
+                          textAlign: TextAlign.center,
+                        ),
+                        const Spacer(flex: 2), // Replaced SizedBox(height: 32)
 
-              // ----- Goal-type cards -----
-              _GoalTypeCard(
-                title: 'Total Screen Time',
-                description: 'Hold yourself accountable for your entire daily phone usage.',
-                isSelected: _isTotalTimeSelected,
-                onTap: () => setState(() => _isTotalTimeSelected = true),
-                child: _AppSelectionButton(
-                  label: 'Exempt Apps',
-                  count: _exemptApps.length,
-                  onPressed: () => _selectApps(
-                    title: 'Select Exempt Apps',
-                    currentSelection: _exemptApps,
-                    onUpdate: (updatedApps) => _exemptApps = updatedApps,
+                        // ----- Goal-type cards -----
+                        _GoalTypeCard(
+                          title: 'Total Screen Time',
+                          description:
+                              'Hold yourself accountable for your entire daily phone usage.',
+                          isSelected: _isTotalTimeSelected,
+                          onTap: () => setState(() => _isTotalTimeSelected = true),
+                          child: _AppSelectionButton(
+                            label: 'Exempt Apps',
+                            count: _exemptApps.length,
+                            onPressed: () => _selectApps(
+                              title: 'Select Exempt Apps',
+                              currentSelection: _exemptApps,
+                              onUpdate: (updatedApps) => _exemptApps = updatedApps,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        _GoalTypeCard(
+                          title: 'Custom App Group',
+                          description: 'Target only your biggest distractions.',
+                          isSelected: !_isTotalTimeSelected,
+                          onTap: () => setState(() => _isTotalTimeSelected = false),
+                          child: _AppSelectionButton(
+                            label: 'Select Apps & Categories',
+                            count: _trackedApps.length,
+                            onPressed: () => _selectApps(
+                              title: 'Select Apps to Track',
+                              currentSelection: _trackedApps,
+                              onUpdate: (updatedApps) => _trackedApps = updatedApps,
+                            ),
+                          ),
+                        ),
+                        const Spacer(flex: 3), // Replaced SizedBox(height: 48)
+
+                        // ----- Daily limit display -----
+                        Text(
+                          'Your Daily Limit',
+                          style: textTheme.headlineMedium,
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 16),
+                        _TimeDisplay(time: _selectedTime, onTap: _showTimePicker),
+                        const Spacer(flex: 3), // Replaced SizedBox(height: 48)
+
+                        // ----- Save button -----
+                        PrimaryButton(
+                          // ✅ CHANGED: Button text and onPressed logic now driven by the ViewModel.
+                          text: viewModelState.isLoading ? 'Saving...' : 'Save Goal',
+                          onPressed: viewModelState.isLoading
+                              ? null // Disable button while loading.
+                              : () {
+                                  // Call the ViewModel method, passing in the current UI state.
+                                  ref
+                                      .read(goalSettingViewModelProvider.notifier)
+                                      .saveGoal(
+                                        isTotalTime: _isTotalTimeSelected,
+                                        timeLimit: _selectedTime,
+                                        exemptApps: _exemptApps,
+                                        trackedApps: _trackedApps,
+                                      );
+                                },
+                        ),
+                        const Spacer(flex: 1), // Replaced SizedBox(height: 24)
+                      ],
+                    ),
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
-              _GoalTypeCard(
-                title: 'Custom App Group',
-                description: 'Target only your biggest distractions.',
-                isSelected: !_isTotalTimeSelected,
-                onTap: () => setState(() => _isTotalTimeSelected = false),
-                child: _AppSelectionButton(
-                  label: 'Select Apps & Categories',
-                  count: _trackedApps.length,
-                  onPressed: () => _selectApps(
-                    title: 'Select Apps to Track',
-                    currentSelection: _trackedApps,
-                    onUpdate: (updatedApps) => _trackedApps = updatedApps,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 48),
-
-              // ----- Daily limit display -----
-              Text(
-                'Your Daily Limit',
-                style: textTheme.headlineMedium,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 16),
-              _TimeDisplay(time: _selectedTime, onTap: _showTimePicker),
-              const SizedBox(height: 48),
-
-              // ----- Save button -----
-              PrimaryButton(
-                // ✅ CHANGED: Button text and onPressed logic now driven by the ViewModel.
-                text: viewModelState.isLoading ? 'Saving...' : 'Save Goal',
-                onPressed: viewModelState.isLoading
-                    ? null // Disable button while loading.
-                    : () {
-                        // Call the ViewModel method, passing in the current UI state.
-                        ref.read(goalSettingViewModelProvider.notifier).saveGoal(
-                              isTotalTime: _isTotalTimeSelected,
-                              timeLimit: _selectedTime,
-                              exemptApps: _exemptApps,
-                              trackedApps: _trackedApps,
-                            );
-                      },
-              ),
-              const SizedBox(height: 24),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );

@@ -1,0 +1,11 @@
+I need you to refactor the UI code for my Flutter page to make it responsive and prevent RenderFlex overflow errors on different screen sizes. The goal is to maintain the current visual layout but replace the rigid, hard-coded spacing with a flexible, proportional layout.
+
+Please adhere to the following principles:
+Replace Fixed Spacing with Proportional Spacing: Find all large, hard-coded SizedBox widgets used for vertical spacing. Replace them with Spacer widgets or by wrapping the main content widgets in Expanded to distribute space proportionally.
+Constrain Infinite-Height Widgets: The most important rule is to handle nested scrolling widgets. If you find a ListView, GridView, or Column placed directly inside another Column, you must wrap the inner widget with an Expanded widget. This gives the inner scrolling widget a bounded height and is the most common fix for vertical RenderFlex errors.
+Handle Horizontal Overflows in Rows: If you find a Row that contains a Text widget that could be long, wrap that Text widget in an Expanded or Flexible widget. This will force the text to wrap or truncate instead of causing a horizontal overflow.
+Use SingleChildScrollView for Overflowing Content: If the entire page's content is legitimately taller than the screen, ensure the root Column is wrapped in a SingleChildScrollView to make the entire page scrollable.
+Please do not significantly change the existing widget structure or visual design. The goal is to apply these responsiveness principles to the current layout.
+
+
+We should not change ANY logic or styles. This is only having to do with spacing and renderflex. We should retain all comments and only add new ones if appropriate. 

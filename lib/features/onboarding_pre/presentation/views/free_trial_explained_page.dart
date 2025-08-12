@@ -42,87 +42,96 @@ class FreeTrialExplainedPage extends ConsumerWidget {
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const Spacer(),
-              Text(
-                'How Your\nFree Trial Works',
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.displayLarge,
-              ),
-              const SizedBox(height: 40),
-              _buildTimeline(context),
-              const SizedBox(height: 32),
-              const Text(
-                '7-day free trial, then\n\$19.99 per year (\$1.67/month)',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontFamily: 'OpenSans',
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.secondaryText,
-                ),
-              ),
-              const Spacer(),
-              const Spacer(),
-              ElevatedButton(
-                onPressed: viewModelState.isLoading
-                    ? null
-                    : () {
-                        // ✅ FIXED: Provided all required arguments for the constructor.
-                        // We pass fake but valid values for the placement and targeting context.
-                        ref
-                            .read(subscriptionOfferViewModelProvider.notifier)
-                            .purchase(Package(
-                                planDetails['packageId'],
-                                PackageType.unknown,
-                                StoreProduct('id', 'desc', 'title', 0.0, 'price_string', 'usd'),
-                                PresentedOfferingContext(
-                                  planDetails['packageId'], // offeringIdentifier
-                                  null, // placementIdentifier (can be null)
-                                  null, // targetingContext (can be null)
-                                ),
-                              ));
-                      },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.buttonFill,
-                  foregroundColor: AppColors.buttonText,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  side: const BorderSide(color: AppColors.buttonStroke, width: 2),
-                ),
-                child: viewModelState.isLoading
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text(
-                        'Start My 7 Day Free Trial',
+          child: LayoutBuilder(builder: (context, constraints) {
+            return SingleChildScrollView(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                child: IntrinsicHeight(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const Spacer(),
+                      Text(
+                        'How Your\nFree Trial Works',
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.displayLarge,
+                      ),
+                      const SizedBox(height: 40),
+                      _buildTimeline(context),
+                      const SizedBox(height: 32),
+                      const Text(
+                      '7-day free trial, then\n\$19.99 per year (\$1.67/month)',
+                        textAlign: TextAlign.center,
                         style: TextStyle(
                           fontFamily: 'OpenSans',
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.secondaryText,
                         ),
                       ),
-              ),
-              const SizedBox(height: 16),
-              TextButton(
-                onPressed: () {
-                  debugPrint('View other plans pressed');
-                },
-                child: Text(
-                  'View other plans',
-                  style: TextStyle(
-                    fontFamily: 'OpenSans',
-                    fontSize: 16,
-                    color: AppColors.secondaryText.withAlpha(204),
-                    decoration: TextDecoration.underline,
+                      const Spacer(),
+                      const Spacer(),
+                      ElevatedButton(
+                        onPressed: viewModelState.isLoading
+                            ? null
+                            : () {
+                                // ✅ FIXED: Provided all required arguments for the constructor.
+                                // We pass fake but valid values for the placement and targeting context.
+                                ref
+                                    .read(subscriptionOfferViewModelProvider.notifier)
+                                    .purchase(Package(
+                                        planDetails['packageId'],
+                                        PackageType.unknown,
+                                        StoreProduct('id', 'desc', 'title', 0.0, 'price_string', 'usd'),
+                                        PresentedOfferingContext(
+                                          planDetails['packageId'], // offeringIdentifier
+                                          null, // placementIdentifier (can be null)
+                                          null, // targetingContext (can be null)
+                                        ),
+                                      ));
+                              },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.buttonFill,
+                          foregroundColor: AppColors.buttonText,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          side: const BorderSide(color: AppColors.buttonStroke, width: 2),
+                        ),
+                        child: viewModelState.isLoading
+                            ? const CircularProgressIndicator(color: Colors.white)
+                            : const Text(
+                                'Start My 7 Day Free Trial',
+                                style: TextStyle(
+                                  fontFamily: 'OpenSans',
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                      ),
+                      const SizedBox(height: 16),
+                      TextButton(
+                        onPressed: () {
+                          debugPrint('View other plans pressed');
+                        },
+                        child: Text(
+                          'View other plans',
+                          style: TextStyle(
+                            fontFamily: 'OpenSans',
+                            fontSize: 16,
+                            color: AppColors.secondaryText.withAlpha(204),
+                            decoration: TextDecoration.underline,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                    ],
                   ),
                 ),
               ),
-              const SizedBox(height: 20),
-            ],
-          ),
+            );
+          }),
         ),
       ),
     );

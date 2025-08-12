@@ -44,59 +44,63 @@ class GetStartedPage extends StatelessWidget {
               child: Padding(
                 // Padding is added to ensure content isn't flush against the screen edges.
                 padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                child: Column(
-                  // MainAxisAlignment.center centers the content vertically within this section.
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    // Header text, styled using the `headlineMedium` style from the app's theme.
-                    Text(
-                      'Welcome to ScreenPledge',
-                      style: Theme.of(context).textTheme.displayLarge,
-                      textAlign: TextAlign.center,
+                child: Center(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      // MainAxisAlignment.center centers the content vertically within this section.
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        // Header text, styled using the `headlineMedium` style from the app's theme.
+                        Text(
+                          'Welcome to ScreenPledge',
+                          style: Theme.of(context).textTheme.displayLarge,
+                          textAlign: TextAlign.center,
+                        ),
+                        // A small vertical space between the header and sub-header.
+                        const SizedBox(height: 16),
+                        // Sub-header text, using the `bodyLarge` style for a softer look.
+                        Text(
+                          'Let\'s reclaim your focus and fulfill your dreams.',
+                          style: Theme.of(context).textTheme.bodyLarge,
+                          textAlign: TextAlign.center,
+                        ),
+                        // A larger vertical space before the primary call-to-action.
+                        const SizedBox(height: 48),
+                        // The primary "Get Started" button, using our reusable component.
+                        // This ensures consistent styling and behavior.
+                        SizedBox(
+                          width: double.infinity, // Make button take full width of its parent
+                          child: PrimaryButton(
+                            text: 'Get Started',
+                            onPressed: () {
+                              // Navigate to the PermissionPage when the button is tapped.
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (context) => const PermissionPage(),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                        // A smaller space before the secondary action.
+                        const SizedBox(height: 12),
+                        // The secondary action for returning users.
+                        // TextButton is used for a less prominent, text-only button.
+                        TextButton(
+                          onPressed: () {
+                            // TODO: Implement navigation to the login screen.
+                            print('Already have an account? tapped');
+                          },
+                          // The style is explicitly set to match the primary text color,
+                          // making it functional but visually subtle against the background.
+                          style: TextButton.styleFrom(
+                            foregroundColor: AppColors.primaryText,
+                          ),
+                          child: const Text('Already have an account?'),
+                        ),
+                      ],
                     ),
-                    // A small vertical space between the header and sub-header.
-                    const SizedBox(height: 16),
-                    // Sub-header text, using the `bodyLarge` style for a softer look.
-                    Text(
-                      'Let\'s reclaim your focus and fulfill your dreams.',
-                      style: Theme.of(context).textTheme.bodyLarge,
-                      textAlign: TextAlign.center,
-                    ),
-                    // A larger vertical space before the primary call-to-action.
-                    const SizedBox(height: 48),
-                    // The primary "Get Started" button, using our reusable component.
-                    // This ensures consistent styling and behavior.
-                    SizedBox(
-                      width: double.infinity, // Make button take full width of its parent
-                      child: PrimaryButton(
-                        text: 'Get Started',
-                        onPressed: () {
-                          // Navigate to the PermissionPage when the button is tapped.
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) => const PermissionPage(),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                    // A smaller space before the secondary action.
-                    const SizedBox(height: 12),
-                    // The secondary action for returning users.
-                    // TextButton is used for a less prominent, text-only button.
-                    TextButton(
-                      onPressed: () {
-                        // TODO: Implement navigation to the login screen.
-                        print('Already have an account? tapped');
-                      },
-                      // The style is explicitly set to match the primary text color,
-                      // making it functional but visually subtle against the background.
-                      style: TextButton.styleFrom(
-                        foregroundColor: AppColors.primaryText,
-                      ),
-                      child: const Text('Already have an account?'),
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),

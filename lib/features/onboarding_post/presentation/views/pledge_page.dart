@@ -27,140 +27,165 @@ class _PledgePageState extends State<PledgePage> {
           style: textTheme.displayLarge, // Apply displayLarge text style
         ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.fromLTRB(24.0, 0.0, 24.0, 24.0), // Reduced top padding
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Text(
-              'This is the single most effective step to guarantee your success.',
-              style: textTheme.bodyLarge, // Apply bodyLarge text style
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16), // Reduced spacing above image
-            Image.asset(
-              'assets/mascot/mascot_pledge_coin.png',
-              height: 100, // Set height to 100
-            ),
-            const SizedBox(height: 16), // Reduced spacing below image
-            _PledgeOptionBox(
-              child: Text(
-                'Users who set a meaningful pledge are 5 times more likely to meet their goals.',
-                style: textTheme.bodySmall?.copyWith(fontStyle: FontStyle.italic), // Apply bodySmall and italicize
-                textAlign: TextAlign.center,
+      body: SafeArea(
+        // This pattern allows the use of Spacers for proportional layout
+        // while ensuring the content can scroll if it overflows, for example
+        // when the keyboard is displayed on a small screen.
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  minHeight: constraints.maxHeight,
+                ),
+                child: IntrinsicHeight(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(24.0, 0.0, 24.0, 24.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        const Spacer(flex: 1),
+                        Text(
+                          'This is the single most effective step to guarantee your success.',
+                          style: textTheme.bodyLarge,
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 16),
+                        Image.asset(
+                          'assets/mascot/mascot_pledge_coin.png',
+                          height: 100,
+                        ),
+                        const SizedBox(height: 16),
+                        _PledgeOptionBox(
+                          child: Text(
+                            'Users who set a meaningful pledge are 5 times more likely to meet their goals.',
+                            style: textTheme.bodySmall
+                                ?.copyWith(fontStyle: FontStyle.italic),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        _PledgeOptionBox(
+                          child: Text(
+                            'Earn rewards 10x faster by setting a pledge!',
+                            style: textTheme.bodySmall
+                                ?.copyWith(fontStyle: FontStyle.italic),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                        const Spacer(flex: 2), // Replaced SizedBox(height: 24)
+                        Text(
+                          'Choose An Amount',
+                          style: textTheme.headlineMedium,
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Expanded(
+                              child: Slider(
+                                value: _currentPledgeValue,
+                                min: 5.0,
+                                max: 100.0,
+                                activeColor: AppColors.buttonFill,
+                                inactiveColor: AppColors.inactive,
+                                onChanged: (newValue) {
+                                  setState(() {
+                                    _currentPledgeValue = newValue;
+                                  });
+                                },
+                              ),
+                            ),
+                            Text(
+                              '\${_currentPledgeValue.toStringAsFixed(0)}',
+                              style: textTheme.headlineSmall,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Confirm Your Understanding',
+                          style: textTheme.headlineSmall,
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 16),
+                        Column(
+                          children: [
+                            CheckboxListTile(
+                              title: Text(
+                                'I understand my \${_currentPledgeValue.toStringAsFixed(0)} pledge will be charged each day I exceed my screen time limit.',
+                                style: textTheme.bodySmall,
+                              ),
+                              value: _understandPledgeCharged,
+                              onChanged: (bool? newValue) {
+                                setState(() {
+                                  _understandPledgeCharged = newValue!;
+                                });
+                              },
+                              controlAffinity:
+                                  ListTileControlAffinity.leading,
+                            ),
+                            CheckboxListTile(
+                              title: Text(
+                                'I understand that this is an ongoing commitment that I can pause, edit, or cancel in settings anytime (effective the next day).',
+                                style: textTheme.bodySmall,
+                              ),
+                              value: _understandOngoingCommitment,
+                              onChanged: (bool? newValue) {
+                                setState(() {
+                                  _understandOngoingCommitment = newValue!;
+                                });
+                              },
+                              controlAffinity:
+                                  ListTileControlAffinity.leading,
+                            ),
+                            CheckboxListTile(
+                              title: Text(
+                                'I authorize ScreenPledge to save my payment method via Stripe.',
+                                style: textTheme.bodySmall,
+                              ),
+                              value: _authorizePaymentSave,
+                              onChanged: (bool? newValue) {
+                                setState(() {
+                                  _authorizePaymentSave = newValue!;
+                                });
+                              },
+                              controlAffinity:
+                                  ListTileControlAffinity.leading,
+                            ),
+                          ],
+                        ),
+                        const Spacer(flex: 2), // Replaced SizedBox(height: 32)
+                        PrimaryButton(
+                          text: 'Activate My Pledge',
+                          onPressed: () {
+                            // TODO: Implement activation logic
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (context) => const DashboardPage(),
+                              ),
+                            );
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        TextButton(
+                          onPressed: () {
+                            // TODO: Implement Not Now logic
+                          },
+                          child: Text(
+                            'Not Now',
+                            style: TextStyle(color: AppColors.inactive),
+                          ),
+                        ),
+                        const Spacer(flex: 1), // Added a spacer at the bottom
+                      ],
+                    ),
+                  ),
+                ),
               ),
-            ),
-            const SizedBox(height: 16), // Spacing between the pledge option boxes
-            _PledgeOptionBox(
-              child: Text(
-                'Earn rewards 10x faster by setting a pledge!',
-                style: textTheme.bodySmall?.copyWith(fontStyle: FontStyle.italic), // Apply bodySmall and italicize
-                textAlign: TextAlign.center,
-              ),
-            ),
-            const SizedBox(height: 24), // Spacing before the slider
-            Text(
-              'Choose An Amount',
-              style: textTheme.headlineMedium,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16), // Spacing between text and slider
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Expanded(
-                  child: Slider(
-                    value: _currentPledgeValue,
-                    min: 5.0,
-                    max: 100.0,
-                    activeColor: AppColors.buttonFill, // Green color
-                    inactiveColor: AppColors.inactive, // Grey color for inactive track
-                    onChanged: (newValue) {
-                      setState(() {
-                        _currentPledgeValue = newValue; // Update the slider value
-                      });
-                    },
-                  ),
-                ),
-                Text(
-                  '\$${_currentPledgeValue.toStringAsFixed(0)}',
-                  style: textTheme.headlineSmall, // Display value
-                ),
-              ],
-            ),
-            const SizedBox(height: 16), // Spacing between slider and new text
-            Text(
-              'Confirm Your Understanding',
-              style: textTheme.headlineSmall, // Apply headlineSmall text style
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16), // Spacing between new text and checkboxes
-            Column(
-              children: [
-                CheckboxListTile(
-                  title: Text(
-                    'I understand my \$${_currentPledgeValue.toStringAsFixed(0)} pledge will be charged each day I exceed my screen time limit.',
-                    style: textTheme.bodySmall,
-                  ),
-                  value: _understandPledgeCharged,
-                  onChanged: (bool? newValue) {
-                    setState(() {
-                      _understandPledgeCharged = newValue!;
-                    });
-                  },
-                  controlAffinity: ListTileControlAffinity.leading, // Checkbox on the left
-                ),
-                CheckboxListTile(
-                  title: Text(
-                    'I understand that this is an ongoing commitment that I can pause, edit, or cancel in settings anytime (effective the next day).',
-                    style: textTheme.bodySmall,
-                  ),
-                  value: _understandOngoingCommitment,
-                  onChanged: (bool? newValue) {
-                    setState(() {
-                      _understandOngoingCommitment = newValue!;
-                    });
-                  },
-                  controlAffinity: ListTileControlAffinity.leading,
-                ),
-                CheckboxListTile(
-                  title: Text(
-                    'I authorize ScreenPledge to save my payment method via Stripe.',
-                    style: textTheme.bodySmall,
-                  ),
-                  value: _authorizePaymentSave,
-                  onChanged: (bool? newValue) {
-                    setState(() {
-                      _authorizePaymentSave = newValue!;
-                    });
-                  },
-                  controlAffinity: ListTileControlAffinity.leading,
-                ),
-              ],
-            ),
-            const SizedBox(height: 32), // Spacing between checkboxes and buttons
-            PrimaryButton(
-              text: 'Activate My Pledge',
-              onPressed: () {
-                // TODO: Implement activation logic
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => const DashboardPage(),
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 16), // Spacing between buttons
-            TextButton(
-              onPressed: () {
-                // TODO: Implement Not Now logic
-              },
-              child: Text(
-                'Not Now',
-                style: TextStyle(color: AppColors.inactive), // Greyed out text
-              ),
-            ),
-          ],
+            );
+          },
         ),
       ),
     );

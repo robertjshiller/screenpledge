@@ -2,11 +2,19 @@
     xmlns:tools="http://schemas.android.com/tools"
     package="com.screenpledge.app">
 
-    <!-- ✅ ADDED: This is the critical permission required to access the UsageStatsManager. -->
-    <!-- It is a "protected" permission, meaning the user MUST grant it manually from the system settings. -->
-    <!-- The "tools:ignore" attribute is added to suppress a lint warning from the IDE, as it knows this permission is special. -->
+    <!-- This permission is for the UsageStatsManager -->
     <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS"
         tools:ignore="ProtectedPermissions" />
+
+    <!-- ✅ ADDED: This is the new, critical part for Package Visibility. -->
+    <!-- This tag declares that our app has a legitimate need to query for other apps -->
+    <!-- that have a main launchable activity. This is required for Android 11+ -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
+        </intent>
+    </queries>
 
     <application
         android:label="screenpledge"

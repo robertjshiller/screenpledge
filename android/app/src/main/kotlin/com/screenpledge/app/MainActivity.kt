@@ -4,13 +4,14 @@ import android.app.AppOpsManager
 import android.app.usage.UsageStatsManager
 import android.content.Context
 import android.content.Intent
-import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.drawable.Drawable
+import android.os.Build
 import android.os.Process
 import android.provider.Settings
+import android.util.Log // ✅ ADDED: For native logging
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -19,6 +20,7 @@ import java.util.Calendar
 
 class MainActivity: FlutterActivity() {
     private val CHANNEL = "com.screenpledge.app/screentime"
+    private val LOG_TAG = "ScreenPledgeNative" // ✅ ADDED: A tag for our logs
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -33,11 +35,11 @@ class MainActivity: FlutterActivity() {
                 "isPermissionGranted" -> {
                     result.success(canQueryUsageStats())
                 }
-                // ✅ ADDED: New method handlers for fetching app lists.
                 "getInstalledApps" -> {
                     try {
                         result.success(getInstalledApps())
                     } catch (e: Exception) {
+                        Log.e(LOG_TAG, "Error in getInstalledApps: ${e.message}", e)
                         result.error("NATIVE_ERROR", "Failed to get installed apps: ${e.message}", null)
                     }
                 }
@@ -49,6 +51,7 @@ class MainActivity: FlutterActivity() {
                     try {
                         result.success(getUsageTopApps())
                     } catch (e: Exception) {
+                        Log.e(LOG_TAG, "Error in getUsageTopApps: ${e.message}", e)
                         result.error("NATIVE_ERROR", "Failed to get usage stats: ${e.message}", null)
                     }
                 }
@@ -87,79 +90,108 @@ class MainActivity: FlutterActivity() {
     }
 
     /**
-     * ✅ ADDED: Fetches a list of all user-installed, non-system applications.
+     * ✅ REWRITTEN: Gets the definitive list of all user-launchable applications.
+     * This version is simpler and relies on the <queries> tag in the manifest.
      */
     private fun getInstalledApps(): List<Map<String, Any?>> {
-        val packageManager = this.packageManager
-        val apps = packageManager.getInstalledApplications(PackageManager.GET_META_DATA)
+        val pm = this.packageManager
+        val mainIntent = Intent(Intent.ACTION_MAIN, null).addCategory(Intent.CATEGORY_LAUNCHER)
         val appList = mutableListOf<Map<String, Any?>>()
 
-        for (app in apps) {
-            // Filter out system apps to only show user-installed apps.
-            if (app.flags and ApplicationInfo.FLAG_SYSTEM == 0) {
-                val appName = packageManager.getApplicationLabel(app).toString()
-                val packageName = app.packageName
-                val icon = packageManager.getApplicationIcon(app)
-
-                appList.add(mapOf(
-                    "name" to appName,
-                    "packageName" to packageName,
-                    "icon" to drawableToBytes(icon)
-                ))
-            }
+        val resolvedInfos = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            pm.queryIntentActivities(mainIntent, PackageManager.ResolveInfoFlags.of(0L))
+        } else {
+            pm.queryIntentActivities(mainIntent, 0)
         }
+        
+        // ✅ LOGGING ADDED: See how many apps the OS returns before any filtering.
+        Log.d(LOG_TAG, "queryIntentActivities returned ${resolvedInfos.size} apps.")
+
+        for (info in resolvedInfos) {
+            val appInfo = info.activityInfo.applicationInfo
+            val appName = appInfo.loadLabel(pm).toString()
+            val packageName = appInfo.packageName
+            val icon = appInfo.loadIcon(pm)
+
+            appList.add(mapOf(
+                "name" to appName,
+                "packageName" to packageName,
+                "icon" to drawableToBytes(icon)
+            ))
+        }
+        
+        // ✅ LOGGING ADDED: See the final count of apps being sent to Flutter.
+        Log.d(LOG_TAG, "Final app list count for getInstalledApps: ${appList.size}")
         return appList.sortedBy { it["name"] as String }
     }
 
     /**
-     * ✅ ADDED: Fetches the most used apps in the last 7 days.
+     * ✅ REWRITTEN: Gets the most used apps, filtered by the definitive list of launchable apps.
      */
     private fun getUsageTopApps(): List<Map<String, Any?>> {
-        val usageStatsManager = getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
-        val packageManager = this.packageManager
+        val pm = this.packageManager
+        // Step 1: Get the definitive set of launchable package names.
+        val launchablePackages = getLaunchablePackages(pm)
+        Log.d(LOG_TAG, "Found ${launchablePackages.size} launchable packages for filtering usage stats.")
 
+        // Step 2: Query usage stats.
+        val usageStatsManager = getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
         val calendar = Calendar.getInstance()
-        calendar.add(Calendar.DAY_OF_YEAR, -7) // Look at the last 7 days
+        calendar.add(Calendar.DAY_OF_YEAR, -7)
         val startTime = calendar.timeInMillis
         val endTime = System.currentTimeMillis()
 
         val stats = usageStatsManager.queryUsageStats(UsageStatsManager.INTERVAL_DAILY, startTime, endTime)
+        Log.d(LOG_TAG, "UsageStatsManager returned ${stats.size} usage events.")
         val appList = mutableListOf<Map<String, Any?>>()
 
-        // Group stats by package name and sum up the total time
         val aggregatedStats = stats.groupBy { it.packageName }
             .mapValues { entry -> entry.value.sumOf { it.totalTimeInForeground } }
             .toList()
-            .sortedByDescending { it.second } // Sort by most time used
-            .take(20) // Take the top 20 most used apps
+            .sortedByDescending { it.second }
 
+        // Step 3: Filter usage stats against the launchable packages set.
         for ((packageName, totalTime) in aggregatedStats) {
             if (totalTime <= 0) continue
-            try {
-                val appInfo = packageManager.getApplicationInfo(packageName, 0)
-                // Also filter out system apps from the top usage list.
-                if (appInfo.flags and ApplicationInfo.FLAG_SYSTEM == 0) {
-                    val appName = packageManager.getApplicationLabel(appInfo).toString()
-                    val icon = packageManager.getApplicationIcon(appInfo)
+            if (launchablePackages.contains(packageName)) {
+                try {
+                    val appInfo = pm.getApplicationInfo(packageName, 0)
+                    val appName = appInfo.loadLabel(pm).toString()
+                    val icon = appInfo.loadIcon(pm)
                     appList.add(mapOf(
                         "name" to appName,
                         "packageName" to packageName,
                         "icon" to drawableToBytes(icon)
                     ))
+                } catch (e: PackageManager.NameNotFoundException) {
+                    continue
                 }
-            } catch (e: PackageManager.NameNotFoundException) {
-                // App might have been uninstalled after usage was logged.
-                continue
             }
         }
-        return appList
+        Log.d(LOG_TAG, "Final app list count for getUsageTopApps: ${appList.size}")
+        return appList.take(20)
     }
 
-    /**
-     * ✅ ADDED: Helper function to convert a drawable (like an app icon) to a byte array.
-     * This is necessary to send the image data over the platform channel to Flutter.
-     */
+    // This helper function remains unchanged but is still critical.
+    private fun getLaunchablePackages(pm: PackageManager): Set<String> {
+        val mainIntent = Intent(Intent.ACTION_MAIN, null).addCategory(Intent.CATEGORY_LAUNCHER)
+        val packages = mutableSetOf<String>()
+
+        val resolvedInfos = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            pm.queryIntentActivities(mainIntent, PackageManager.ResolveInfoFlags.of(0L))
+        } else {
+            pm.queryIntentActivities(mainIntent, 0)
+        }
+
+        for (info in resolvedInfos) {
+            packages.add(info.activityInfo.packageName)
+        }
+        return packages
+    }
+
+    // This helper function remains unchanged.
     private fun drawableToBytes(drawable: Drawable): ByteArray {
+        // ✅ FIXED: The body of this function was missing in the previous turn.
         val bitmap = Bitmap.createBitmap(drawable.intrinsicWidth, drawable.intrinsicHeight, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
         drawable.setBounds(0, 0, canvas.width, canvas.height)

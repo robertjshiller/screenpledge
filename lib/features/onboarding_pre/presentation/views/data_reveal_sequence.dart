@@ -123,43 +123,45 @@ class _DataRevealSequenceState extends State<DataRevealSequence> {
                     ),
 
                     // Sequence 2
-                    Column(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: [
-                        const SizedBox(height: 24.0),
-                        Image.asset(
-                          'assets/mascot/mascot_calculating.png',
-                          width: MediaQuery.of(context).size.width * 0.75,
-                        ),
-                        const SizedBox(height: 24.0),
-                        Text(
-                          "The bad news?\nThis year alone, you'll spend around 80 days glued to your phone.\nOver your life you're on track to spend",
-                          style: textTheme.bodyLarge,
-                          textAlign: TextAlign.center,
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 8.0),
-                          child: ShaderMask(
-                            shaderCallback: (bounds) => const LinearGradient(
-                              colors: [
-                                AppColors.gradientGreenStart,
-                                AppColors.gradientGreenEnd
-                              ],
-                            ).createShader(bounds),
-                            child: Text(
-                              "16 years",
-                              style: AppTheme.displayExtraLarge.copyWith(
-                                color: Colors.white,
+                    SingleChildScrollView(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: 24.0),
+                          Image.asset(
+                            'assets/mascot/mascot_calculating.png',
+                            width: MediaQuery.of(context).size.width * 0.75,
+                          ),
+                          const SizedBox(height: 24.0),
+                          Text(
+                            "The bad news?\nThis year alone, you'll spend around 80 days glued to your phone.\nOver your life you're on track to spend",
+                            style: textTheme.bodyLarge,
+                            textAlign: TextAlign.center,
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8.0),
+                            child: ShaderMask(
+                              shaderCallback: (bounds) => const LinearGradient(
+                                colors: [
+                                  AppColors.gradientGreenStart,
+                                  AppColors.gradientGreenEnd
+                                ],
+                              ).createShader(bounds),
+                              child: Text(
+                                "16 years",
+                                style: AppTheme.displayExtraLarge.copyWith(
+                                  color: Colors.white,
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                        Text(
-                          "of your life looking down at a screen.\nYes, you read that correctly.",
-                          style: textTheme.bodyLarge,
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
+                          Text(
+                            "of your life looking down at a screen.\nYes, you read that correctly.",
+                            style: textTheme.bodyLarge,
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
                     ),
 
                     // Sequence 3
@@ -245,37 +247,41 @@ class _DataRevealSequenceState extends State<DataRevealSequence> {
                     ),
 
                     // Sequence 4
-                    Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          "Don't worry.\nWe got good news!\n\nWith ScreenPledge, you can reclaim",
-                          style: textTheme.bodyLarge,
-                          textAlign: TextAlign.center,
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 8.0),
-                          child: ShaderMask(
-                            shaderCallback: (bounds) => const LinearGradient(
-                              colors: [
-                                AppColors.gradientGreenStart,
-                                AppColors.gradientGreenEnd
-                              ],
-                            ).createShader(bounds),
-                            child: Text(
-                              "5+ years",
-                              style: AppTheme.displayExtraLarge.copyWith(
-                                color: Colors.white,
+                    Center(
+                      child: SingleChildScrollView(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              "Don't worry.\nWe got good news!\n\nWith ScreenPledge, you can reclaim",
+                              style: textTheme.bodyLarge,
+                              textAlign: TextAlign.center,
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 8.0),
+                              child: ShaderMask(
+                                shaderCallback: (bounds) => const LinearGradient(
+                                  colors: [
+                                    AppColors.gradientGreenStart,
+                                    AppColors.gradientGreenEnd
+                                  ],
+                                ).createShader(bounds),
+                                child: Text(
+                                  "5+ years",
+                                  style: AppTheme.displayExtraLarge.copyWith(
+                                    color: Colors.white,
+                                  ),
+                                ),
                               ),
                             ),
-                          ),
+                            Text(
+                              "of your life from distractions-- and finally have the time to live your best life.",
+                              style: textTheme.bodyLarge,
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
                         ),
-                        Text(
-                          "of your life from distractions-- and finally have the time to live your best life.",
-                          style: textTheme.bodyLarge,
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
+                      ),
                     ),
                   ],
                 ),
@@ -327,20 +333,27 @@ class _DataRevealSequenceState extends State<DataRevealSequence> {
       },
     ];
 
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Image.asset(
-          cardData[index]["image"]!,
-          height: 300,
+    return Center(
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Image.asset(
+              cardData[index]["image"]!,
+              height: 300,
+            ),
+            const SizedBox(height: 24.0),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: Text(
+                cardData[index]["text"]!,
+                style: Theme.of(context).textTheme.headlineMedium,
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ],
         ),
-        const SizedBox(height: 24.0),
-        Text(
-          cardData[index]["text"]!,
-          style: Theme.of(context).textTheme.headlineMedium,
-          textAlign: TextAlign.center,
-        ),
-      ],
+      ),
     );
   }
 }

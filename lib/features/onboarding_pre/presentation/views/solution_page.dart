@@ -16,63 +16,68 @@ class SolutionPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Padding(
-              padding: const EdgeInsets.only(top: 24.0, bottom: 16.0),
-              child: Text(
-                'The ScreenPledge Solution',
-                style: textTheme.displayLarge,
-                textAlign: TextAlign.center,
-              ),
-            ),
-            Text(
-              'Money Backed Motivation',
-              style: textTheme.headlineMedium,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 24.0), // Add some space below the text
-            Image.asset(
-              'assets/mascot/mascot_piggy.png',
-              width: 300, // Set width to 300
-            ),
-            const SizedBox(height: 24.0), // Add some space below the image
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0),
-              child: Column(
-                children: [
-                  Text(
-                    'Studies show that when you put money on the line, you are',
-                    style: textTheme.bodyLarge,
-                    textAlign: TextAlign.center,
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8.0),
-                    child: ShaderMask(
-                      shaderCallback: (bounds) => const LinearGradient(
-                        colors: [
-                          AppColors.gradientGreenStart,
-                          AppColors.gradientGreenEnd
-                        ],
-                      ).createShader(bounds),
-                      child: Text(
-                        '500%',
-                        style: AppTheme.displayExtraLarge.copyWith(
-                          color: Colors.white, // Important for ShaderMask to work
-                          fontSize: 48.0, // Adjust font size to fit better
+            Expanded(
+              child: SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      const SizedBox(height: 24.0),
+                      Text(
+                        'The ScreenPledge Solution',
+                        style: textTheme.displayLarge,
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 16.0),
+                      Text(
+                        'Money Backed Motivation',
+                        style: textTheme.headlineMedium,
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 24.0),
+                      Image.asset(
+                        'assets/mascot/mascot_piggy.png',
+                        width: 300,
+                      ),
+                      const SizedBox(height: 24.0),
+                      Text(
+                        'Studies show that when you put money on the line, you are',
+                        style: textTheme.bodyLarge,
+                        textAlign: TextAlign.center,
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8.0),
+                        child: ShaderMask(
+                          shaderCallback: (bounds) => const LinearGradient(
+                            colors: [
+                              AppColors.gradientGreenStart,
+                              AppColors.gradientGreenEnd
+                            ],
+                          ).createShader(bounds),
+                          child: Text(
+                            '500%',
+                            style: AppTheme.displayExtraLarge.copyWith(
+                              color: Colors.white,
+                              fontSize: 48.0,
+                            ),
+                          ),
                         ),
                       ),
-                    ),
+                      Text(
+                        'more likely to achieve your goals.',
+                        style: textTheme.bodyLarge,
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 20),
+                    ],
                   ),
-                  Text(
-                    'more likely to achieve your goals.',
-                    style: textTheme.bodyLarge,
-                    textAlign: TextAlign.center,
-                  ),
-                ],
+                ),
               ),
             ),
-            const Spacer(), // Pushes content to the top and button to the bottom
+            // Sticky bottom button
             Padding(
-              padding: const EdgeInsets.fromLTRB(24.0, 0, 24.0, 24.0),
+              padding: const EdgeInsets.fromLTRB(24.0, 12.0, 24.0, 24.0),
               child: SizedBox(
                 width: double.infinity,
                 child: PrimaryButton(

@@ -110,85 +110,97 @@ class _HowItWorksSequenceState extends State<HowItWorksSequence> {
                   index: _sequence,
                   children: [
                     // Sequence 1
-                    Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        
-                        Image.asset(
-                          cardData[0]["image"]!,
-                          height: 200,
+                    Center(
+                      child: SingleChildScrollView(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            
+                            Image.asset(
+                              cardData[0]["image"]!,
+                              height: 200,
+                            ),
+                            const SizedBox(height: 24.0),
+                            Text(
+                              cardData[0]["title"]!,
+                              style: textTheme.headlineMedium,
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 16.0),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                              child: Text(
+                                cardData[0]["description"]!,
+                                style: textTheme.bodyLarge,
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                            const SizedBox(height: 48.0),
+                          ],
                         ),
-                        const SizedBox(height: 24.0),
-                        Text(
-                          cardData[0]["title"]!,
-                          style: textTheme.headlineMedium,
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 16.0),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                          child: Text(
-                            cardData[0]["description"]!,
-                            style: textTheme.bodyLarge,
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                        const SizedBox(height: 48.0),
-                      ],
+                      ),
                     ),
 
                     // Sequence 2
-                    Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Image.asset(
-                          cardData[1]["image"]!,
-                          height: 200,
+                    Center(
+                      child: SingleChildScrollView(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Image.asset(
+                              cardData[1]["image"]!,
+                              height: 200,
+                            ),
+                            const SizedBox(height: 24.0),
+                            Text(
+                              cardData[1]["title"]!,
+                              style: textTheme.headlineMedium,
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 16.0),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                              child: Text(
+                                cardData[1]["description"]!,
+                                style: textTheme.bodyLarge,
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                            const SizedBox(height: 48.0),
+                          ],
                         ),
-                        const SizedBox(height: 24.0),
-                        Text(
-                          cardData[1]["title"]!,
-                          style: textTheme.headlineMedium,
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 16.0),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                          child: Text(
-                            cardData[1]["description"]!,
-                            style: textTheme.bodyLarge,
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                        const SizedBox(height: 48.0),
-                      ],
+                      ),
                     ),
 
                     // Sequence 3
-                    Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Image.asset(
-                          cardData[2]["image"]!,
-                          height: 200,
+                    Center(
+                      child: SingleChildScrollView(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Image.asset(
+                              cardData[2]["image"]!,
+                              height: 200,
+                            ),
+                            const SizedBox(height: 24.0),
+                            Text(
+                              cardData[2]["title"]!,
+                              style: textTheme.headlineMedium,
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 16.0),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                              child: Text(
+                                cardData[2]["description"]!,
+                                style: textTheme.bodyLarge,
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                            const SizedBox(height: 48.0),
+                          ],
                         ),
-                        const SizedBox(height: 24.0),
-                        Text(
-                          cardData[2]["title"]!,
-                          style: textTheme.headlineMedium,
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 16.0),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                          child: Text(
-                            cardData[2]["description"]!,
-                            style: textTheme.bodyLarge,
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                        const SizedBox(height: 48.0),
-                      ],
+                      ),
                     ),
                   ],
                 ),

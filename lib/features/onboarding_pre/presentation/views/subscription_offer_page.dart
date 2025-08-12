@@ -60,196 +60,201 @@ class SubscriptionOfferPage extends ConsumerWidget {
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Text(
-                    'Commit to\nA Better You',
-                    style: Theme.of(context).textTheme.displayLarge,
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-                const SizedBox(height: 8),
-
-                const _CheckListRow(
-                    label: 'Build life-changing habits', boldWord: 'Build'),
-                const _CheckListRow(
-                    label: 'Reclaim hours of your free time',
-                    boldWord: 'Reclaim'),
-                const _CheckListRow(
-                    label: 'Focus to earn real rewards', boldWord: 'Focus'),
-                const SizedBox(height: 16),
-
-                // Subscription plan cards
-                ...List.generate(plans.length, (i) {
-                  final plan = plans[i];
-                  final isSelected = viewModel.selectedIndex == i;
-                  final isFreeTrial = plan['freeTrial'] == true;
-                  final isMostPop = plan['mostPopular'] == true;
-                  final subtext = plan['subtext'] as String? ?? '';
-                  final savings = plan['savings'] as String? ?? '';
-
-                  return Container(
-                    margin: const EdgeInsets.symmetric(vertical: 8),
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? const Color(0xFFD4FFE9)
-                          : Colors.white,
-                      borderRadius: BorderRadius.circular(18),
-                      border: Border.all(
-                          color: AppColors.buttonStroke, width: 2),
-                      boxShadow: [
-                        if (isSelected)
-                          BoxShadow(
-                            color: AppColors.buttonStroke.withOpacity(0.08),
-                            blurRadius: 12,
-                            offset: const Offset(0, 2),
-                          ),
-                      ],
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 600),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Text(
+                        'Commit to\nA Better You',
+                        style: Theme.of(context).textTheme.displayLarge,
+                        textAlign: TextAlign.center,
+                      ),
                     ),
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(18),
-                        onTap: () => viewModel.selectPlan(i),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 18, vertical: 18),
-                          child: Row(
-                            children: [
-                              CustomRadio(
-                                selected: isSelected,
-                                onTap: () => viewModel.selectPlan(i),
-                                outlineColor: AppColors.buttonStroke,
-                                fillColor: Colors.white,
-                                selectedFillColor: AppColors.buttonFill,
-                                checkmarkColor: AppColors.buttonText,
-                                size: 22,
+                    const SizedBox(height: 8),
+
+                    const _CheckListRow(
+                        label: 'Build life-changing habits', boldWord: 'Build'),
+                    const _CheckListRow(
+                        label: 'Reclaim hours of your free time',
+                        boldWord: 'Reclaim'),
+                    const _CheckListRow(
+                        label: 'Focus to earn real rewards', boldWord: 'Focus'),
+                    const SizedBox(height: 16),
+
+                    // Subscription plan cards
+                    ...List.generate(plans.length, (i) {
+                      final plan = plans[i];
+                      final isSelected = viewModel.selectedIndex == i;
+                      final isFreeTrial = plan['freeTrial'] == true;
+                      final isMostPop = plan['mostPopular'] == true;
+                      final subtext = plan['subtext'] as String? ?? '';
+                      final savings = plan['savings'] as String? ?? '';
+
+                      return Container(
+                        margin: const EdgeInsets.symmetric(vertical: 8),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? const Color(0xFFD4FFE9)
+                              : Colors.white,
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(
+                              color: AppColors.buttonStroke, width: 2),
+                          boxShadow: [
+                            if (isSelected)
+                              BoxShadow(
+                                color: AppColors.buttonStroke.withOpacity(0.08),
+                                blurRadius: 12,
+                                offset: const Offset(0, 2),
                               ),
-                              const SizedBox(width: 18),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      plan['label'] as String,
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .displayLarge!
-                                          .copyWith(
-                                              fontSize: 24,
-                                              fontWeight: FontWeight.w800),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      plan['price'] as String,
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodyLarge!
-                                          .copyWith(fontSize: 16),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.end,
+                          ],
+                        ),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(18),
+                            onTap: () => viewModel.selectPlan(i),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 18, vertical: 18),
+                              child: Row(
                                 children: [
-                                  if (isFreeTrial || isMostPop)
-                                    Row(
-                                      mainAxisSize: MainAxisSize.min,
+                                  CustomRadio(
+                                    selected: isSelected,
+                                    onTap: () => viewModel.selectPlan(i),
+                                    outlineColor: AppColors.buttonStroke,
+                                    fillColor: Colors.white,
+                                    selectedFillColor: AppColors.buttonFill,
+                                    checkmarkColor: AppColors.buttonText,
+                                    size: 22,
+                                  ),
+                                  const SizedBox(width: 18),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        if (isFreeTrial)
-                                          _Badge(
-                                              label: 'Free Trial',
-                                              background:
-                                                  AppColors.buttonFill),
-                                        if (isFreeTrial && isMostPop)
-                                          const SizedBox(width: 6),
-                                        if (isMostPop)
-                                          _Badge(
-                                              label: 'Most Popular',
-                                              background: const Color.fromARGB(
-                                                  255, 255, 176, 85)),
-                                      ],
-                                    ),
-                                  if (subtext.isNotEmpty ||
-                                      savings.isNotEmpty) ...[
-                                    if (subtext.isNotEmpty)
-                                      Padding(
-                                        padding:
-                                            const EdgeInsets.only(top: 4),
-                                        child: Text(
-                                          subtext,
+                                        Text(
+                                          plan['label'] as String,
                                           style: Theme.of(context)
                                               .textTheme
-                                              .bodySmall!
+                                              .displayLarge!
                                               .copyWith(
-                                                  color: AppColors
-                                                      .secondaryText,
-                                                  fontWeight: FontWeight.w600),
+                                                  fontSize: 24,
+                                                  fontWeight: FontWeight.w800),
                                         ),
-                                      ),
-                                    if (savings.isNotEmpty)
-                                      Text(
-                                        savings,
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodySmall!
-                                            .copyWith(
-                                                color:
-                                                    AppColors.buttonStroke,
-                                                fontStyle: FontStyle.italic),
-                                      ),
-                                  ],
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          plan['price'] as String,
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodyLarge!
+                                              .copyWith(fontSize: 16),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: [
+                                      if (isFreeTrial || isMostPop)
+                                        Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            if (isFreeTrial)
+                                              _Badge(
+                                                  label: 'Free Trial',
+                                                  background:
+                                                      AppColors.buttonFill),
+                                            if (isFreeTrial && isMostPop)
+                                              const SizedBox(width: 6),
+                                            if (isMostPop)
+                                              _Badge(
+                                                  label: 'Most Popular',
+                                                  background: const Color.fromARGB(
+                                                      255, 255, 176, 85)),
+                                          ],
+                                        ),
+                                      if (subtext.isNotEmpty ||
+                                          savings.isNotEmpty) ...[
+                                        if (subtext.isNotEmpty)
+                                          Padding(
+                                            padding:
+                                                const EdgeInsets.only(top: 4),
+                                            child: Text(
+                                              subtext,
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .bodySmall!
+                                                  .copyWith(
+                                                      color: AppColors
+                                                          .secondaryText,
+                                                      fontWeight: FontWeight.w600),
+                                            ),
+                                          ),
+                                        if (savings.isNotEmpty)
+                                          Text(
+                                            savings,
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodySmall!
+                                                .copyWith(
+                                                    color:
+                                                        AppColors.buttonStroke,
+                                                    fontStyle: FontStyle.italic),
+                                          ),
+                                      ],
+                                    ],
+                                  ),
                                 ],
                               ),
-                            ],
+                            ),
                           ),
+                        ),
+                      );
+                    }),
+                    const SizedBox(height: 18),
+                    Center(
+                      child: Text(
+                        "You won't be charged today.\nFree trial details on the next screen.",
+                        style: Theme.of(context).textTheme.bodyLarge!.copyWith(
+                            color: AppColors.secondaryText),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+                    Center(
+                      child: SizedBox(
+                        width: 320,
+                        child: PrimaryButton(
+                          // The button is only disabled if the ViewModel is in a loading state,
+                          // which shouldn't happen on this screen anymore, but is good practice.
+                          text: asyncState.isLoading ? 'Processing...' : 'Continue',
+                          onPressed: asyncState.isLoading
+                              ? null
+                              : () {
+                                  // ✅ CHANGED: This button no longer calls purchase().
+                                  // Its only job is to navigate to the explanation page,
+                                  // passing along the data for the user's chosen plan.
+                                  final selectedPlan = plans[viewModel.selectedIndex];
+                                  
+                                  Navigator.push(
+                                    context, 
+                                    MaterialPageRoute(
+                                      builder: (_) => FreeTrialExplainedPage(
+                                        // ✅ PASSING DATA: We send the selected plan's info.
+                                        planDetails: selectedPlan,
+                                      ),
+                                    ),
+                                  );
+                                },
                         ),
                       ),
                     ),
-                  );
-                }),
-                const SizedBox(height: 18),
-                Center(
-                  child: Text(
-                    "You won't be charged today.\nFree trial details on the next screen.",
-                    style: Theme.of(context).textTheme.bodyLarge!.copyWith(
-                        color: AppColors.secondaryText),
-                    textAlign: TextAlign.center,
-                  ),
+                  ],
                 ),
-                const SizedBox(height: 18),
-                Center(
-                  child: SizedBox(
-                    width: 320,
-                    child: PrimaryButton(
-                      // The button is only disabled if the ViewModel is in a loading state,
-                      // which shouldn't happen on this screen anymore, but is good practice.
-                      text: asyncState.isLoading ? 'Processing...' : 'Continue',
-                      onPressed: asyncState.isLoading
-                          ? null
-                          : () {
-                              // ✅ CHANGED: This button no longer calls purchase().
-                              // Its only job is to navigate to the explanation page,
-                              // passing along the data for the user's chosen plan.
-                              final selectedPlan = plans[viewModel.selectedIndex];
-                              
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => FreeTrialExplainedPage(
-                                    // ✅ PASSING DATA: We send the selected plan's info.
-                                    planDetails: selectedPlan,
-                                  ),
-                                ),
-                              );
-                            },
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
         ),
@@ -304,22 +309,24 @@ class _CheckListRow extends StatelessWidget {
         children: [
           Icon(Icons.check, size: 22, color: AppColors.buttonStroke),
           const SizedBox(width: 8),
-          RichText(
-            text: TextSpan(
-              children: [
-                for (int i = 0; i < parts.length; i++) ...[
-                  TextSpan(
-                    text: parts[i],
-                    style: i == boldIdx
-                        ? Theme.of(context)
-                            .textTheme
-                            .bodyLarge!
-                            .copyWith(fontWeight: FontWeight.bold)
-                        : Theme.of(context).textTheme.bodyLarge,
-                  ),
-                  if (i < parts.length - 1) const TextSpan(text: ' '),
+          Expanded(
+            child: RichText(
+              text: TextSpan(
+                children: [
+                  for (int i = 0; i < parts.length; i++) ...[
+                    TextSpan(
+                      text: parts[i],
+                      style: i == boldIdx
+                          ? Theme.of(context)
+                              .textTheme
+                              .bodyLarge!
+                              .copyWith(fontWeight: FontWeight.bold)
+                          : Theme.of(context).textTheme.bodyLarge,
+                    ),
+                    if (i < parts.length - 1) const TextSpan(text: ' '),
+                  ],
                 ],
-              ],
+              ),
             ),
           ),
         ],
