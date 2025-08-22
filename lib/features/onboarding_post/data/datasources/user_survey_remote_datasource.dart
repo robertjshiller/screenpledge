@@ -7,27 +7,11 @@ class UserSurveyRemoteDataSource {
   final SupabaseClient _client;
   UserSurveyRemoteDataSource(this._client);
 
-  /// Inserts the survey answers into the `user_surveys` table.
-  Future<void> saveSurvey(List<String?> answers) async {
-    // Get the current user's ID. This is secure because it's from the active session.
-    final userId = _client.auth.currentUser?.id;
-    if (userId == null) {
-      throw const AuthException('User is not authenticated.');
-    }
-
-    // Map the list of answers to the corresponding database columns.
-    // This mapping must match the order of questions in the UI.
-    final surveyData = {
-      'user_id': userId,
-      'age_range': answers[0],
-      'occupation': answers[1],        // Corresponds to "primary_role" in the UI
-      'primary_purpose': answers[2],   // Corresponds to "primary_goal" in the UI
-      'attribution_source': answers[3],
-    };
-
-    // The `insert` call is protected by Row Level Security (RLS) policies
-    // defined in the Supabase dashboard, ensuring a user can only insert
-    // a row for their own user_id.
-    await _client.from('user_surveys').insert(surveyData);
+  /// ✅ CHANGED: This method now calls the 'submit_user_survey' RPC.
+  /// It passes the survey answers as a single JSON object.
+  Future<void> submitSurvey(Map<String, String?> answers) async {
+    // The RPC function on the backend will handle getting the user ID
+    // and performing the two database operations (insert and update) atomically.
+    await _client.rpc('submit_user_survey', params: {'survey_data': answers});
   }
 }

@@ -1,14 +1,16 @@
+// lib/core/domain/repositories/goal_repository.dart
+
 import 'package:screenpledge/core/domain/entities/goal.dart';
 
-/// The contract (interface) for a repository that handles goal-related data operations.
-///
-/// This abstract class defines *what* can be done with goals, but not *how*.
-/// The concrete implementation will live in the data layer and will know how
-/// to communicate with Supabase.
+/// The contract (interface) for a repository that handles Goal-related data operations.
 abstract class IGoalRepository {
-  /// Saves a user's goal to the persistent data store.
+  /// A method to call the RPC that finalizes the onboarding goal.
   ///
-  /// Takes a domain [Goal] object as input.
-  /// Throws an exception if the operation fails, which can be caught in the UI layer.
-  Future<void> saveGoal(Goal goal);
+  /// Takes an optional pledge amount. If null or 0, the pledge is considered skipped.
+  Future<void> commitOnboardingGoal({int? pledgeAmountCents});
+
+  /// Fetches the definition of the user's currently active goal.
+  ///
+  /// Returns the [Goal] object if one is found, otherwise returns null.
+  Future<Goal?> getActiveGoal();
 }

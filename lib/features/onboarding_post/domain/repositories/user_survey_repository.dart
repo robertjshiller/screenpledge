@@ -1,9 +1,9 @@
 // lib/features/onboarding_post/domain/repositories/user_survey_repository.dart
 
 /// The DOMAIN layer contract for handling user survey data operations.
-/// This defines WHAT needs to be done, but not HOW.
 abstract class IUserSurveyRepository {
-  /// Saves the user's survey answers to the backend.
-  /// Throws an exception if the operation fails.
-  Future<void> saveSurvey(List<String?> answers);
+  /// ✅ CHANGED: The method now takes a Map for clarity and robustness.
+  /// Submits the user's survey answers to the backend.
+  /// This is now an atomic operation that also updates the onboarding checkpoint.
+  Future<void> submitSurvey(Map<String, String?> answers);
 }

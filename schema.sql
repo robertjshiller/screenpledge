@@ -30,18 +30,16 @@ CREATE TABLE public.profiles (
   pledge_points integer NOT NULL DEFAULT 0,
   lifetime_pledge_points integer NOT NULL DEFAULT 0,
   streak_count integer NOT NULL DEFAULT 0,
-  -- Renamed from accountability_status.
   pledge_status public.pledge_status NOT NULL DEFAULT 'inactive',
-  -- Renamed from accountability_amount_cents.
   pledge_amount_cents integer NOT NULL DEFAULT 0,
   revenuecat_app_user_id text UNIQUE,
   stripe_customer_id text UNIQUE,
   user_timezone text,
   show_contextual_tips boolean NOT NULL DEFAULT true,
   show_motivational_nudges boolean NOT NULL DEFAULT true,
-  -- Replaced the single 'has_completed_onboarding' with granular, explicit flags.
   onboarding_completed_survey boolean NOT NULL DEFAULT false,
   onboarding_completed_goal_setup boolean NOT NULL DEFAULT false,
+  onboarding_draft_goal JSONB, -- ✅ FIXED: Added the missing comma.
   onboarding_completed_pledge_setup boolean NOT NULL DEFAULT false,
   created_at timestamp with time zone NOT NULL DEFAULT now(),
   updated_at timestamp with time zone NOT NULL DEFAULT now()
@@ -70,7 +68,6 @@ CREATE TABLE public.daily_results (
   date date NOT NULL,
   outcome public.daily_outcome NOT NULL,
   pp_earned integer NOT NULL DEFAULT 0,
-  -- Renamed from fee_charged_cents for consistency.
   pledge_charged_cents integer NOT NULL DEFAULT 0,
   acknowledged_at timestamp with time zone,
   created_at timestamp with time zone NOT NULL DEFAULT now()
@@ -86,7 +83,6 @@ CREATE TABLE public.rewards (
   description text,
   pp_cost integer NOT NULL,
   image_url text,
-  -- Renamed from display_type to be consistent with the ENUM name.
   reward_type public.reward_type NOT NULL,
   required_tier public.reward_tier NOT NULL DEFAULT 'bronze',
   total_inventory integer,
@@ -161,6 +157,75 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+-- This function creates a new user survey and marks the survey checkpoint as complete in a single transaction.
+CREATE OR REPLACE FUNCTION public.submit_user_survey(survey_data jsonb)
+RETURNS void AS $$
+BEGIN
+  INSERT INTO public.user_surveys (user_id, age_range, occupation, primary_purpose, attribution_source)
+  VALUES (
+    auth.uid(),
+    survey_data->>'age_range',
+    survey_data->>'occupation',
+    survey_data->>'primary_purpose',
+    survey_data->>'attribution_source'
+  );
+  UPDATE public.profiles
+  SET onboarding_completed_survey = TRUE
+  WHERE id = auth.uid();
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- This function saves the user's draft goal from onboarding and marks the
+-- goal setup checkpoint as complete in a single, atomic transaction.
+CREATE OR REPLACE FUNCTION public.save_onboarding_goal_draft(draft_goal_data jsonb)
+RETURNS void AS $$
+BEGIN
+  UPDATE public.profiles
+  SET
+    onboarding_draft_goal = draft_goal_data,
+    onboarding_completed_goal_setup = TRUE
+  WHERE
+    id = auth.uid();
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- This function finalizes the onboarding process. It takes the draft goal from the
+-- user's profile, creates an official goal record, optionally sets the pledge,
+-- and marks all onboarding steps as complete in a single atomic transaction.
+CREATE OR REPLACE FUNCTION public.commit_onboarding_goal(pledge_amount_cents_input integer DEFAULT 0)
+RETURNS void AS $$
+DECLARE
+  draft_goal_data jsonb;
+BEGIN
+  SELECT onboarding_draft_goal INTO draft_goal_data
+  FROM public.profiles
+  WHERE id = auth.uid();
+
+  IF draft_goal_data IS NULL THEN
+    RAISE EXCEPTION 'User does not have a draft goal to commit.';
+  END IF;
+
+  INSERT INTO public.goals (user_id, status, goal_type, time_limit_seconds, tracked_apps, exempt_apps)
+  VALUES (
+    auth.uid(),
+    'active',
+    (draft_goal_data->>'goalType')::public.goal_type,
+    (draft_goal_data->>'timeLimit')::integer,
+    (draft_goal_data->>'trackedApps')::jsonb,
+    (draft_goal_data->>'exemptApps')::jsonb
+  );
+
+  UPDATE public.profiles
+  SET
+    pledge_status = CASE WHEN pledge_amount_cents_input > 0 THEN 'active'::public.pledge_status ELSE 'inactive'::public.pledge_status END,
+    pledge_amount_cents = pledge_amount_cents_input,
+    onboarding_completed_pledge_setup = TRUE,
+    onboarding_draft_goal = NULL
+  WHERE
+    id = auth.uid();
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- =================================================================
 -- SECTION 5: TABLE-LEVEL PRIVILEGES (GRANTS)

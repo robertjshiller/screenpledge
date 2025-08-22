@@ -1,5 +1,7 @@
+// lib/core/data/repositories/profile_repository_impl.dart
+
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:screenpledge/core/data/datasources/user_remote_data_source.dart'; // Assuming this is your ProfileDataSource
+import 'package:screenpledge/core/data/datasources/user_remote_data_source.dart';
 import 'package:screenpledge/core/domain/entities/profile.dart';
 import 'package:screenpledge/core/domain/repositories/profile_repository.dart';
 
@@ -13,7 +15,6 @@ class ProfileRepositoryImpl implements IProfileRepository {
   /// Fetches the profile for the currently authenticated user.
   @override
   Future<Profile> getMyProfile() async {
-    // ... (existing getMyProfile implementation)
     try {
       final userId = _supabaseClient.auth.currentUser?.id;
       if (userId == null) {
@@ -27,24 +28,17 @@ class ProfileRepositoryImpl implements IProfileRepository {
     }
   }
 
-  /// ✅ ADDED: The concrete implementation for updating the onboarding status.
+  /// ✅ ADDED: The concrete implementation for saving the draft goal via an RPC.
   @override
-  Future<void> updateOnboardingStatus(String column, bool value) async {
+  Future<void> saveOnboardingDraftGoal(Map<String, dynamic> draftGoal) async {
     try {
-      final userId = _supabaseClient.auth.currentUser?.id;
-      if (userId == null) {
-        throw const AuthException('User is not authenticated.');
-      }
-
-      // Perform an update on the 'profiles' table for the current user.
-      // The RLS policy "Users can update their own profile" allows this.
-      await _supabaseClient
-          .from('profiles')
-          .update({column: value})
-          .eq('id', userId);
-          
+      // This calls our new RPC, passing the draft goal data.
+      // The server-side function handles the atomic update.
+      await _supabaseClient.rpc(
+        'save_onboarding_goal_draft',
+        params: {'draft_goal_data': draftGoal},
+      );
     } catch (e) {
-      // In a real app, you might want to log this error to a service.
       rethrow;
     }
   }

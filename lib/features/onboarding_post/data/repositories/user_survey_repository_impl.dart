@@ -4,18 +4,17 @@ import 'package:screenpledge/features/onboarding_post/data/datasources/user_surv
 import 'package:screenpledge/features/onboarding_post/domain/repositories/user_survey_repository.dart';
 
 /// The DATA layer implementation of the IUserSurveyRepository contract.
-/// It acts as a bridge, delegating the call to the data source.
 class UserSurveyRepositoryImpl implements IUserSurveyRepository {
   final UserSurveyRemoteDataSource _remoteDataSource;
   UserSurveyRepositoryImpl(this._remoteDataSource);
 
   @override
-  Future<void> saveSurvey(List<String?> answers) async {
+  Future<void> submitSurvey(Map<String, String?> answers) async {
+    // The implementation remains simple: delegate the call to the data source.
+    // Error handling is managed by the ViewModel layer.
     try {
-      return await _remoteDataSource.saveSurvey(answers);
+      return await _remoteDataSource.submitSurvey(answers);
     } catch (e) {
-      // Here you could catch specific exceptions and re-throw them as
-      // custom domain-layer failures if needed. For now, we just re-throw.
       rethrow;
     }
   }

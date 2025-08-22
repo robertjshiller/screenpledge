@@ -73,5 +73,5 @@ class AppColors {
 
   /// The color for inactive icons or text, providing a subtle, muted look.
   /// This is the primary text color with 60% opacity.
-  static final Color inactive = primaryText.withAlpha(153); // 255 * 0.6 = 153
+  static const Color inactive = Color(0x99222222); // 255 * 0.6 = 153 (0x99)
 }

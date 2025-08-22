@@ -2,20 +2,23 @@
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:screenpledge/features/onboarding_post/di/user_survey_providers.dart';
-import 'package:screenpledge/features/onboarding_post/domain/usecases/save_user_survey.dart';
+// ✅ CHANGED: Import the new use case.
+import 'package:screenpledge/features/onboarding_post/domain/usecases/submit_user_survey.dart';
 
 /// Manages the state and business logic for the User Survey page.
 class UserSurveyViewModel extends StateNotifier<AsyncValue<void>> {
-  final SaveUserSurvey _saveUserSurveyUseCase;
+  // ✅ CHANGED: The dependency is now the new use case.
+  final SubmitUserSurveyUseCase _submitUserSurveyUseCase;
 
-  UserSurveyViewModel(this._saveUserSurveyUseCase) : super(const AsyncValue.data(null));
+  UserSurveyViewModel(this._submitUserSurveyUseCase) : super(const AsyncValue.data(null));
 
   /// Attempts to save the user's survey answers to the backend.
   /// Returns `true` on success, `false` on failure.
-  Future<bool> submitSurvey(List<String?> answers) async {
+  Future<bool> submitSurvey(Map<String, String?> answers) async {
     state = const AsyncValue.loading();
     try {
-      await _saveUserSurveyUseCase(answers);
+      // ✅ CHANGED: Call the new use case.
+      await _submitUserSurveyUseCase(answers);
       state = const AsyncValue.data(null);
       return true;
     } catch (e, st) {
@@ -29,6 +32,7 @@ class UserSurveyViewModel extends StateNotifier<AsyncValue<void>> {
 final userSurveyViewModelProvider =
     StateNotifierProvider.autoDispose<UserSurveyViewModel, AsyncValue<void>>(
   (ref) {
-    return UserSurveyViewModel(ref.read(saveUserSurveyUseCaseProvider));
+    // ✅ CHANGED: The provider now reads the new use case provider.
+    return UserSurveyViewModel(ref.read(submitUserSurveyUseCaseProvider));
   },
 );

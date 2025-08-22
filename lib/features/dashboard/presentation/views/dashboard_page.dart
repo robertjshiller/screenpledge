@@ -1,70 +1,120 @@
+// lib/features/dashboard/presentation/views/dashboard_page.dart
+
 import 'package:flutter/material.dart';
 import 'package:screenpledge/core/config/theme/app_colors.dart';
-import 'package:screenpledge/core/config/theme/app_theme.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:screenpledge/core/common_widgets/bottom_nav_bar.dart';
+import 'package:screenpledge/features/dashboard/presentation/viewmodels/dashboard_viewmodel.dart';
+import 'package:screenpledge/features/dashboard/presentation/widgets/progress_ring.dart';
+import 'package:screenpledge/features/dashboard/presentation/widgets/weekly_bar_chart.dart';
 
-/// A page displayed on Day 1 when a user has set a goal and pledge,
-/// but the pledge is pending activation (i.e., waiting for the next midnight).
-class DashboardPage extends StatefulWidget {
+class DashboardPage extends ConsumerWidget {
   const DashboardPage({super.key});
 
-  @override
-  State<DashboardPage> createState() => _DashboardPageState();
-}
+  /// A helper function to format the duration into a readable string.
+  String _formatDuration(Duration duration) {
+    final hours = duration.inHours;
+    final minutes = duration.inMinutes.remainder(60);
+    if (hours > 0) {
+      return '${hours}h ${minutes}m';
+    }
+    return '${minutes}m';
+  }
 
-class _DashboardPageState extends State<DashboardPage> {
-  int _selectedIndex = 0; // Default to Dashboard
-
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-    // TODO: Implement navigation logic based on index
+  /// A helper to determine the color of the ring based on progress.
+  Color _getProgressColor(double progress) {
+    if (progress >= 0.75) return Colors.red.shade400;
+    if (progress >= 0.50) return Colors.orange.shade400;
+    return AppColors.primaryAccent;
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final dashboardState = ref.watch(dashboardProvider);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Dashboard'),
         centerTitle: true,
-      ), // AppBar
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Image.asset(
-                'assets/mascot/mascot_neutral.png', // Neutral mascot for general dashboard
-                height: 150,
-              ),
-              const SizedBox(height: 32),
-              Text(
-                'Welcome to your Dashboard!',
-                style: AppTheme.themeData.textTheme.displayLarge?.copyWith(
-                  color: AppColors.primaryText,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                "This is where you'll track your progress and manage your pledges.",
-                style: AppTheme.themeData.textTheme.bodyLarge?.copyWith(
-                  color: AppColors.secondaryText,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 48),
-              // Placeholder for future dashboard content or actions
-              // Removed the "Back to Dashboard" button as it's no longer relevant.
-            ],
-          ),
-        ),
       ),
+      body: dashboardState.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, stackTrace) => Center(
+          child: Text('An error occurred: $error'),
+        ),
+        data: (activeGoal) {
+          if (activeGoal == null) {
+            return const Center(
+              child: Text(
+                'No active goal found.\nSet a new goal to get started!',
+                textAlign: TextAlign.center,
+              ),
+            );
+          }
+
+          // Progress for the COLOR is based on time USED.
+          final timeUsedProgress = activeGoal.progressPercentage;
+          final color = _getProgressColor(timeUsedProgress);
+
+          // Progress for the RING is based on time REMAINING.
+          final timeLimit = activeGoal.timeLimit;
+          final timeSpent = activeGoal.timeSpent;
+          final timeRemaining = timeLimit > timeSpent ? timeLimit - timeSpent : Duration.zero;
+          final ringProgress = (timeLimit.inSeconds > 0)
+              ? timeRemaining.inSeconds / timeLimit.inSeconds
+              : 0.0;
+
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    width: 250,
+                    height: 250,
+                    child: ProgressRing(
+                      progress: ringProgress, // Use the remaining progress for the visual
+                      progressColor: color,
+                      strokeWidth: 20,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            _formatDuration(timeRemaining),
+                            style: Theme.of(context).textTheme.headlineLarge,
+                          ),
+                          const Text('remaining'),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 48),
+                  Text(
+                    "Today's Limit: ${_formatDuration(timeLimit)}",
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Time Used: ${_formatDuration(timeSpent)}',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 48), // Add some spacing
+                  const WeeklyBarChart(), // Add the new weekly bar chart
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+      // We keep the bottom navigation bar for consistent app navigation.
+      // Note: The state management for the nav bar index is simplified here.
+      // In a real app, this would likely be managed by a separate provider.
       bottomNavigationBar: BottomNavBar(
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
+        currentIndex: 0, // Hardcoded to the dashboard index
+        onTap: (index) {
+          // TODO: Implement navigation logic
+        },
       ),
     );
   }

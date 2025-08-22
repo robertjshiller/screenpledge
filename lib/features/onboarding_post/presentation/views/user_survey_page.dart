@@ -1,14 +1,12 @@
 // lib/features/onboarding_post/presentation/views/user_survey_page.dart
 
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart'; // ✅ ADDED
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:screenpledge/core/common_widgets/primary_button.dart';
 import 'package:screenpledge/core/config/theme/app_colors.dart';
 import 'package:screenpledge/features/onboarding_post/presentation/views/goal_setting_page.dart';
-import 'package:screenpledge/features/onboarding_post/presentation/viewmodels/user_survey_viewmodel.dart'; // ✅ ADDED
+import 'package:screenpledge/features/onboarding_post/presentation/viewmodels/user_survey_viewmodel.dart';
 
-// ✅ CHANGED: Converted to a ConsumerStatefulWidget to manage local state (the answers)
-// while also being able to interact with Riverpod providers.
 class UserSurveyPage extends ConsumerStatefulWidget {
   const UserSurveyPage({super.key});
 
@@ -24,86 +22,61 @@ class _UserSurveyPageState extends ConsumerState<UserSurveyPage> {
   final List<Map<String, dynamic>> _questions = [
     {
       'question': 'What is your age range?',
+      'key': 'age_range', // ✅ ADDED: A key to map the answer to the database column.
       'answers': [
-        'Under 18',
-        '18-24',
-        '25-34',
-        '35-44',
-        '45-54',
-        '55-64',
-        '65 or older',
-        'Prefer not to say'
+        'Under 18', '18-24', '25-34', '35-44', '45-54', '55-64', '65 or older', 'Prefer not to say'
       ],
     },
     {
       'question': 'Which of these best describes your primary role?',
+      'key': 'occupation', // ✅ ADDED
       'answers': [
-        'Student',
-        'Professional (Office or Remote)',
-        'Professional (In-person or Field Work)',
-        'Parent or Guardian',
-        'Creator or Freelancer',
-        'Currently Seeking Work',
-        'Retired',
-        'Other',
-        'Prefer not to say'
+        'Student', 'Professional (Office or Remote)', 'Professional (In-person or Field Work)', 'Parent or Guardian', 'Creator or Freelancer', 'Currently Seeking Work', 'Retired', 'Other', 'Prefer not to say'
       ],
     },
     {
       'question': 'What is your primary goal with ScreenPledge?',
+      'key': 'primary_purpose', // ✅ ADDED
       'answers': [
-        'Improve my focus and productivity',
-        'Be more present with friends and family',
-        'Improve my sleep and mental wellness',
-        'Reclaim my free time for hobbies',
-        'Reduce anxiety from social media',
-        'Other',
-        'Prefer not to say'
+        'Improve my focus and productivity', 'Be more present with friends and family', 'Improve my sleep and mental wellness', 'Reclaim my free time for hobbies', 'Reduce anxiety from social media', 'Other', 'Prefer not to say'
       ],
     },
     {
       'question': 'How did you first discover us?',
+      'key': 'attribution_source', // ✅ ADDED
       'answers': [
-        'App Store Search',
-        'App Store Feature',
-        'Social Media Ad',
-        'Online Article or Post',
-        'Friend or Family',
-        'Podcast or YouTube',
-        'Other',
-        'Prefer not to say'
+        'App Store Search', 'App Store Feature', 'Social Media Ad', 'Online Article or Post', 'Friend or Family', 'Podcast or YouTube', 'Other', 'Prefer not to say'
       ],
     },
   ];
 
-  // A helper function to check if all questions have been answered.
   bool get _areAllQuestionsAnswered {
     return _answers.every((answer) => answer != null);
   }
 
-  // ✅ CHANGED: This method now calls the ViewModel to handle the business logic.
   void _submitSurvey() {
     debugPrint('UserSurveyPage: Submit button pressed. Calling ViewModel.');
-    // We call the ViewModel's method. We don't need to `await` it here because
-    // the `ref.listen` block below will handle the result of the operation.
-    ref.read(userSurveyViewModelProvider.notifier).submitSurvey(_answers);
+    
+    // ✅ CHANGED: Create a Map from the answers list to pass to the ViewModel.
+    // This is more robust than relying on the order of a list.
+    final Map<String, String?> answerMap = {
+      for (int i = 0; i < _questions.length; i++) _questions[i]['key']: _answers[i],
+    };
+
+    ref.read(userSurveyViewModelProvider.notifier).submitSurvey(answerMap);
   }
 
   @override
   Widget build(BuildContext context) {
-    // ✅ ADDED: Watch the ViewModel's state to react to loading/error states.
     final viewModelState = ref.watch(userSurveyViewModelProvider);
 
-    // ✅ ADDED: A listener to handle side-effects like navigation and showing SnackBars.
     ref.listen<AsyncValue<void>>(userSurveyViewModelProvider, (previous, next) {
-      // On successful submission (when state changes from loading to data), navigate.
       if (previous is AsyncLoading && next is AsyncData) {
         debugPrint('UserSurveyPage Listener: Detected successful save. Navigating to GoalSettingPage.');
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (context) => const GoalSettingPage()),
         );
       }
-      // On error, show a SnackBar with the error message.
       if (next is AsyncError) {
         debugPrint('UserSurveyPage Listener: Detected an error - ${next.error}');
         ScaffoldMessenger.of(context).showSnackBar(
@@ -118,7 +91,6 @@ class _UserSurveyPageState extends ConsumerState<UserSurveyPage> {
       appBar: AppBar(
         title: const Text('A Few Quick Questions'),
         centerTitle: true,
-        // The skip button allows users to bypass the survey if they choose.
         actions: [
           TextButton(
             onPressed: () {
@@ -137,7 +109,6 @@ class _UserSurveyPageState extends ConsumerState<UserSurveyPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Use an Expanded widget with a ListView to make the content scrollable.
               Expanded(
                 child: ListView(
                   children: [
@@ -154,15 +125,12 @@ class _UserSurveyPageState extends ConsumerState<UserSurveyPage> {
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 48.0),
-
-                    // We now generate all question widgets in a single list.
                     ...List.generate(_questions.length, (index) {
                       return _QuestionDropdown(
                         question: _questions[index]['question'],
                         answers: _questions[index]['answers'].cast<String>(),
                         selectedValue: _answers[index],
                         onChanged: (newValue) {
-                          // We use setState to update the local UI when an answer is selected.
                           setState(() {
                             _answers[index] = newValue;
                           });
@@ -172,9 +140,7 @@ class _UserSurveyPageState extends ConsumerState<UserSurveyPage> {
                   ],
                 ),
               ),
-              // The primary action button to submit the survey.
               PrimaryButton(
-                // ✅ CHANGED: Button text and enabled/disabled state are now driven by the ViewModel.
                 text: viewModelState.isLoading ? 'Saving...' : 'Continue',
                 onPressed: _areAllQuestionsAnswered && !viewModelState.isLoading
                     ? _submitSurvey
@@ -188,6 +154,7 @@ class _UserSurveyPageState extends ConsumerState<UserSurveyPage> {
     );
   }
 }
+
 
 // A reusable widget for a question with a styled dropdown menu.
 class _QuestionDropdown extends StatelessWidget {

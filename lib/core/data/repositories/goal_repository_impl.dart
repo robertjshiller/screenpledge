@@ -1,28 +1,64 @@
-import 'package:screenpledge/core/data/datasources/goal_remote_datasource.dart';
+// lib/core/data/repositories/goal_repository_impl.dart
+
+import 'package:flutter/foundation.dart';
 import 'package:screenpledge/core/domain/entities/goal.dart';
+import 'package:screenpledge/core/domain/entities/installed_app.dart';
 import 'package:screenpledge/core/domain/repositories/goal_repository.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-/// The concrete implementation of the [IGoalRepository].
-/// This is a shared capability, so it lives in the core data layer.
+/// The concrete implementation of the [IGoalRepository] contract.
 class GoalRepositoryImpl implements IGoalRepository {
-  final GoalRemoteDataSource _remoteDataSource;
+  final SupabaseClient _supabaseClient;
 
-  GoalRepositoryImpl(this._remoteDataSource);
+  GoalRepositoryImpl(this._supabaseClient);
 
   @override
-  Future<void> saveGoal(Goal goal) async {
-    // 1. Convert the pure domain 'Goal' object into a Map that matches the database schema.
-    final goalData = {
-      // The user_id is handled by Supabase RLS policies and default values.
-      'status': 'active', // Default status when creating a new goal.
-      'goal_type': goal.goalType == GoalType.totalTime ? 'total_time' : 'custom_group',
-      'time_limit_seconds': goal.timeLimit.inSeconds,
-      // Convert the Set of InstalledApp objects to a List of JSON maps.
-      'tracked_apps': goal.trackedApps.map((app) => app.toJson()).toList(),
-      'exempt_apps': goal.exemptApps.map((app) => app.toJson()).toList(),
-    };
+  Future<void> commitOnboardingGoal({int? pledgeAmountCents}) async {
+    try {
+      await _supabaseClient.rpc(
+        'commit_onboarding_goal',
+        params: {'pledge_amount_cents_input': pledgeAmountCents ?? 0},
+      );
+    } catch (e) {
+      rethrow;
+    }
+  }
 
-    // 2. Call the remote data source to perform the database operation.
-    await _remoteDataSource.createGoal(goalData);
+  @override
+  Future<Goal?> getActiveGoal() async {
+    try {
+      final userId = _supabaseClient.auth.currentUser?.id;
+      if (userId == null) {
+        throw const AuthException('User is not authenticated.');
+      }
+
+      final data = await _supabaseClient
+          .from('goals')
+          .select()
+          .eq('user_id', userId)
+          .eq('status', 'active')
+          .limit(1)
+          .maybeSingle();
+
+      if (data == null) {
+        return null;
+      }
+
+      return Goal(
+        goalType: data['goal_type'] == 'total_time'
+            ? GoalType.totalTime
+            : GoalType.customGroup,
+        timeLimit: Duration(seconds: data['time_limit_seconds']),
+        trackedApps: <InstalledApp>{},
+        exemptApps: <InstalledApp>{},
+      );
+    } on PostgrestException catch (e) {
+      debugPrint('Error fetching active goal: $e');
+      rethrow;
+    } catch (e) {
+      debugPrint('An unexpected error occurred: $e');
+      rethrow;
+    }
   }
 }
+

@@ -1,10 +1,11 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart'; // ✅ ADDED: Riverpod for state management.
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:screenpledge/core/common_widgets/primary_button.dart';
 import 'package:screenpledge/core/config/theme/app_colors.dart';
+import 'package:screenpledge/core/di/profile_providers.dart'; // ✅ ADDED: To read the profile for draft data.
 import 'package:screenpledge/core/domain/entities/installed_app.dart';
-import 'package:screenpledge/features/onboarding_post/presentation/viewmodels/goal_setting_viewmodel.dart'; // ✅ ADDED: The ViewModel for this page.
+import 'package:screenpledge/features/onboarding_post/presentation/viewmodels/goal_setting_viewmodel.dart';
 import 'package:screenpledge/features/onboarding_post/presentation/views/app_selection_page.dart';
 import 'package:screenpledge/features/onboarding_post/presentation/views/pledge_page.dart';
 
@@ -22,6 +23,32 @@ class _GoalSettingPageState extends ConsumerState<GoalSettingPage> {
   Duration _selectedTime = const Duration(hours: 3, minutes: 15);
   Set<InstalledApp> _exemptApps = {};
   Set<InstalledApp> _trackedApps = {};
+
+  // ✅ ADDED: A method to pre-populate the form from the user's profile.
+  @override
+  void initState() {
+    super.initState();
+    // Use a post-frame callback to safely read a provider within initState.
+    // This ensures the widget is fully built before we try to access the provider.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // We use `ref.read` because we only need the value once for initialization.
+      final profile = ref.read(myProfileProvider).value;
+
+      // Check if a draft goal exists on the user's profile.
+      if (profile?.onboardingDraftGoal != null) {
+        final draftGoal = profile!.onboardingDraftGoal!;
+        // If it does, update the local state to restore the user's progress.
+        setState(() {
+          _isTotalTimeSelected = draftGoal['goalType'] == 'total_time';
+          _selectedTime = Duration(seconds: draftGoal['timeLimit']);
+          // Note: Deserializing the app lists is more complex and can be added later.
+          // It would require matching package names from the JSON with the full
+          // list of InstalledApp objects fetched from the device.
+          // For now, restoring the simple values is a huge win for UX.
+        });
+      }
+    });
+  }
 
   /* ───────────────────────── TIME-PICKER DIALOG ───────────────────────── */
 
@@ -112,7 +139,7 @@ class _GoalSettingPageState extends ConsumerState<GoalSettingPage> {
           // On error, show a SnackBar.
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Error saving goal: ${error.toString()}'),
+              content: Text('Error saving draft: ${error.toString()}'),
               backgroundColor: Colors.red,
             ),
           );
@@ -211,15 +238,15 @@ class _GoalSettingPageState extends ConsumerState<GoalSettingPage> {
 
                         // ----- Save button -----
                         PrimaryButton(
-                          // ✅ CHANGED: Button text and onPressed logic now driven by the ViewModel.
-                          text: viewModelState.isLoading ? 'Saving...' : 'Save Goal',
+                          // ✅ CHANGED: Button text now reflects the action of continuing.
+                          text: viewModelState.isLoading ? 'Saving...' : 'Save & Continue',
                           onPressed: viewModelState.isLoading
                               ? null // Disable button while loading.
                               : () {
-                                  // Call the ViewModel method, passing in the current UI state.
+                                  // ✅ CHANGED: Call the new ViewModel method to save the draft.
                                   ref
                                       .read(goalSettingViewModelProvider.notifier)
-                                      .saveGoal(
+                                      .saveDraftGoalAndContinue(
                                         isTotalTime: _isTotalTimeSelected,
                                         timeLimit: _selectedTime,
                                         exemptApps: _exemptApps,

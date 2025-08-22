@@ -1,30 +1,34 @@
+// lib/features/onboarding_post/presentation/viewmodels/goal_setting_viewmodel.dart
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:screenpledge/core/di/goal_providers.dart'; // ✅ ADDED: This import makes the provider visible to this file.
+import 'package:screenpledge/core/di/profile_providers.dart'; // ✅ CHANGED: Import profile providers
 import 'package:screenpledge/core/domain/entities/goal.dart';
 import 'package:screenpledge/core/domain/entities/installed_app.dart';
-import 'package:screenpledge/core/domain/usecases/save_goal.dart';
+// ✅ CHANGED: Import the new, correctly named use case.
+import 'package:screenpledge/core/domain/usecases/save_goal_and_continue.dart';
 
 /// Manages the state and business logic for the GoalSettingPage.
 class GoalSettingViewModel extends StateNotifier<AsyncValue<void>> {
-  final SaveGoalUseCase _saveGoalUseCase;
+  // ✅ CHANGED: The dependency is now the new, clearly named use case.
+  final SaveGoalAndContinueUseCase _saveGoalAndContinueUseCase;
 
-  GoalSettingViewModel(this._saveGoalUseCase) : super(const AsyncValue.data(null));
+  GoalSettingViewModel(this._saveGoalAndContinueUseCase) : super(const AsyncValue.data(null));
 
-  /// Called when the user taps the 'Save Goal' button.
+  /// ✅ CHANGED: Renamed to match the use case and clarify its purpose.
   ///
-  /// This method orchestrates the process of creating the Goal entity
-  /// and executing the save operation.
-  Future<void> saveGoal({
+  /// This method now saves the user's goal configuration as a "draft" in their
+  /// profile and marks the goal setup step of onboarding as complete in a single
+  /// atomic transaction.
+  Future<void> saveDraftGoalAndContinue({
     required bool isTotalTime,
     required Duration timeLimit,
     required Set<InstalledApp> exemptApps,
     required Set<InstalledApp> trackedApps,
   }) async {
-    // Set the state to loading to give the user feedback.
     state = const AsyncValue.loading();
 
-    // Create the pure domain entity from the UI data.
-    final goal = Goal(
+    // Create the pure domain entity from the UI data. This is the "draft goal".
+    final draftGoal = Goal(
       goalType: isTotalTime ? GoalType.totalTime : GoalType.customGroup,
       timeLimit: timeLimit,
       exemptApps: exemptApps,
@@ -32,26 +36,21 @@ class GoalSettingViewModel extends StateNotifier<AsyncValue<void>> {
     );
 
     try {
-      // Execute the use case.
-      await _saveGoalUseCase(goal);
-      // If successful, set the state back to data (which signals success to the UI).
+      // Execute the use case to save the draft and update the flag via the RPC.
+      await _saveGoalAndContinueUseCase(draftGoal);
       state = const AsyncValue.data(null);
     } catch (e, st) {
-      // If an error occurs, capture it in the state.
       state = AsyncValue.error(e, st);
     }
   }
 }
 
 /// The Riverpod provider for the GoalSettingViewModel.
-///
-/// This is specific to the onboarding feature.
 final goalSettingViewModelProvider =
     StateNotifierProvider.autoDispose<GoalSettingViewModel, AsyncValue<void>>(
   (ref) {
-    // The ViewModel depends on the core use case.
-    // ✅ FIXED: This line now works because the provider is imported correctly.
-    final saveGoalUseCase = ref.watch(saveGoalUseCaseProvider);
-    return GoalSettingViewModel(saveGoalUseCase);
+    // ✅ CHANGED: The provider now watches the new saveGoalAndContinueUseCaseProvider.
+    final saveGoalAndContinueUseCase = ref.watch(saveGoalAndContinueUseCaseProvider);
+    return GoalSettingViewModel(saveGoalAndContinueUseCase);
   },
 );

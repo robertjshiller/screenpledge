@@ -28,11 +28,9 @@ class Profile {
   /// The user's current success streak in days.
   final int streakCount;
 
-  // ✅ CHANGED: Renamed from accountabilityStatus to match the new schema.
   /// The current status of the user's monetary pledge.
   final String pledgeStatus;
 
-  // ✅ CHANGED: Renamed from accountabilityAmountCents to match the new schema.
   /// The monetary amount of the user's pledge, in cents.
   final int pledgeAmountCents;
 
@@ -40,13 +38,20 @@ class Profile {
   /// and end of a "day" for goal tracking (e.g., "America/New_York").
   final String? userTimezone;
 
-  // ✅ CHANGED: Replaced the single 'has_completed_onboarding' with granular flags.
   /// A flag indicating completion of the onboarding survey.
   final bool onboardingCompletedSurvey;
+
   /// A flag indicating completion of the initial goal setup.
   final bool onboardingCompletedGoalSetup;
+
   /// A flag indicating completion of the initial pledge setup.
   final bool onboardingCompletedPledgeSetup;
+
+  // ✅ ADDED: A field to temporarily store the goal configuration during onboarding.
+  /// This makes the onboarding flow resilient to interruptions. It is populated
+  /// on the GoalSettingPage and consumed on the PledgePage. It should be cleared
+  /// after the final goal is created.
+  final Map<String, dynamic>? onboardingDraftGoal;
 
   /// The timestamp when the profile was first created in the database.
   final DateTime createdAt;
@@ -68,6 +73,7 @@ class Profile {
     required this.onboardingCompletedSurvey,
     required this.onboardingCompletedGoalSetup,
     required this.onboardingCompletedPledgeSetup,
+    this.onboardingDraftGoal, // ✅ ADDED
     required this.createdAt,
     required this.updatedAt,
   });
@@ -84,14 +90,14 @@ class Profile {
       pledgePoints: json['pledge_points'] as int,
       lifetimePledgePoints: json['lifetime_pledge_points'] as int,
       streakCount: json['streak_count'] as int,
-      // ✅ CHANGED: Updated keys to match the new schema.
       pledgeStatus: json['pledge_status'] as String,
       pledgeAmountCents: json['pledge_amount_cents'] as int,
       userTimezone: json['user_timezone'] as String?,
-      // ✅ CHANGED: Updated keys to match the new schema.
       onboardingCompletedSurvey: json['onboarding_completed_survey'] as bool,
       onboardingCompletedGoalSetup: json['onboarding_completed_goal_setup'] as bool,
       onboardingCompletedPledgeSetup: json['onboarding_completed_pledge_setup'] as bool,
+      // ✅ ADDED: Safely cast the jsonb column to a Map. It can be null.
+      onboardingDraftGoal: json['onboarding_draft_goal'] as Map<String, dynamic>?,
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
     );
