@@ -1,3 +1,6 @@
+// lib/core/services/android_screen_time_service.dart
+
+import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:screenpledge/core/domain/entities/installed_app.dart';
@@ -7,17 +10,15 @@ import 'package:screenpledge/core/services/screen_time_service.dart';
 class AndroidScreenTimeService implements ScreenTimeService {
   static const _channel = MethodChannel('com.screenpledge.app/screentime');
 
-  // This method remains unchanged.
   @override
   Future<void> requestPermission() async {
     try {
       await _channel.invokeMethod('requestPermission');
-    } on PlatformException catch  (e) {
+    } on PlatformException catch (e) {
       debugPrint("Failed to open usage settings: '${e.message}'.");
     }
   }
 
-  // This method remains unchanged.
   @override
   Future<bool> isPermissionGranted() async {
     try {
@@ -28,15 +29,12 @@ class AndroidScreenTimeService implements ScreenTimeService {
     }
   }
 
-  /// ✅ ADDED: Implementation for fetching all installed apps.
   @override
   Future<List<InstalledApp>> getInstalledApps() async {
     try {
-      // Call the native method. The result is a List of Maps.
       final List<dynamic>? result = await _channel.invokeMethod('getInstalledApps');
       if (result == null) return [];
 
-      // Map the raw list of maps into a list of our strongly-typed InstalledApp entities.
       return result.map((appMap) {
         final map = Map<String, dynamic>.from(appMap);
         return InstalledApp(
@@ -47,11 +45,10 @@ class AndroidScreenTimeService implements ScreenTimeService {
       }).toList();
     } on PlatformException catch (e) {
       debugPrint("Failed to get installed apps: '${e.message}'.");
-      return []; // Return an empty list on failure.
+      return [];
     }
   }
 
-  /// ✅ ADDED: Implementation for fetching the top used apps.
   @override
   Future<List<InstalledApp>> getUsageTopApps() async {
     try {
@@ -67,14 +64,42 @@ class AndroidScreenTimeService implements ScreenTimeService {
         );
       }).toList();
     } on PlatformException catch (e) {
-      // Specifically handle the case where permission is denied.
       if (e.code == 'PERMISSION_DENIED') {
         debugPrint('Cannot get usage stats: Permission denied.');
-        // Optionally, re-throw a more specific exception type here.
       } else {
         debugPrint("Failed to get usage top apps: '${e.message}'.");
       }
       return [];
+    }
+  }
+
+  /// ✅ ADDED: Implementation for fetching usage for a specific list of apps.
+  @override
+  Future<Duration> getUsageForApps(List<String> packageNames) async {
+    // If the list is empty, we don't need to make a native call.
+    if (packageNames.isEmpty) return Duration.zero;
+    try {
+      // Pass the list of package names as an argument to the native method.
+      final int milliseconds = await _channel.invokeMethod<int>(
+        'getUsageForApps',
+        {'packageNames': packageNames},
+      ) ?? 0;
+      return Duration(milliseconds: milliseconds);
+    } on PlatformException catch (e) {
+      debugPrint("Failed to get usage for apps: '${e.message}'.");
+      return Duration.zero; // Return zero on failure.
+    }
+  }
+
+  /// ✅ ADDED: Implementation for fetching total device usage.
+  @override
+  Future<Duration> getTotalDeviceUsage() async {
+    try {
+      final int milliseconds = await _channel.invokeMethod<int>('getTotalDeviceUsage') ?? 0;
+      return Duration(milliseconds: milliseconds);
+    } on PlatformException catch (e) {
+      debugPrint("Failed to get total device usage: '${e.message}'.");
+      return Duration.zero;
     }
   }
 }

@@ -1,3 +1,5 @@
+// lib/features/onboarding_post/presentation/views/app_selection_page.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:screenpledge/core/config/theme/app_colors.dart';
@@ -26,7 +28,10 @@ class AppSelectionPage extends ConsumerWidget {
     final notifier = ref.read(viewModel.notifier);
 
     return Scaffold(
+      // ✅ CHANGED: Set the AppBar background color explicitly to white for better contrast.
+      // This ensures the "Done" button and title are always visible against a clean background.
       appBar: AppBar(
+        backgroundColor: Colors.white,
         title: Text(title),
         leading: IconButton(
           icon: const Icon(Icons.close),
@@ -38,7 +43,16 @@ class AppSelectionPage extends ConsumerWidget {
               // Pop the page and return the final set of selected apps.
               Navigator.of(context).pop(state.selectedApps);
             },
-            child: const Text('Done'),
+            // ✅ CHANGED: Explicitly style the TextButton to ensure visibility.
+            // We use the buttonStroke color from AppColors for high contrast.
+            child: Text(
+              'Done',
+              style: TextStyle(
+                color: AppColors.buttonStroke,
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+            ),
           ),
         ],
       ),
@@ -59,16 +73,29 @@ class AppSelectionPage extends ConsumerWidget {
                     borderSide: BorderSide.none,
                   ),
                   filled: true,
+                  // Use a very light, subtle color for the search bar background.
                   fillColor: AppColors.inactive.withAlpha(50),
                 ),
               ),
             ),
-            // Tabs
-            const TabBar(
-              tabs: [
-                Tab(text: 'Suggested'),
-                Tab(text: 'All Apps'),
-              ],
+            // ✅ CHANGED: The TabBar is now wrapped in a Container with a white background
+            // and styled explicitly to ensure visibility and contrast.
+            Container(
+              color: Colors.white, // White background for the tab bar area
+              child: TabBar(
+                // Color of the text for the selected tab.
+                labelColor: AppColors.primaryText,
+                // Color of the text for unselected tabs.
+                unselectedLabelColor: AppColors.secondaryText,
+                // Color of the indicator line below the selected tab.
+                indicatorColor: AppColors.buttonStroke,
+                // Makes the indicator line thicker and more prominent.
+                indicatorWeight: 3.0,
+                tabs: const [
+                  Tab(text: 'Suggested'),
+                  Tab(text: 'All Apps'),
+                ],
+              ),
             ),
             // Content
             Expanded(
@@ -126,8 +153,10 @@ class _AppList extends StatelessWidget {
     if (apps.isEmpty) {
       return const Center(child: Text('No apps found.'));
     }
-    return ListView.builder(
+    // Using ListView.separated adds a visual divider between items for better clarity.
+    return ListView.separated(
       itemCount: apps.length,
+      separatorBuilder: (context, index) => const Divider(height: 1),
       itemBuilder: (context, index) {
         final app = apps[index];
         final isSelected = selectedApps.contains(app);

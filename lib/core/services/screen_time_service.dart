@@ -1,9 +1,9 @@
+// lib/core/services/screen_time_service.dart
 
-// ✅ FIXED: This import is now USED by the methods in this file.
 import 'package:screenpledge/core/domain/entities/installed_app.dart';
 
 /// An abstract class defining the contract for a platform-specific screen time service.
-// This contract defines the capabilities our app needs for interacting with native screen time APIs.
+/// This contract defines the capabilities our app needs for interacting with native screen time APIs.
 abstract class ScreenTimeService {
   /// Opens the system's Usage Access Settings screen for the user.
   Future<void> requestPermission();
@@ -22,7 +22,13 @@ abstract class ScreenTimeService {
   /// This provides the data for the "Suggested" or "Time Sinks" tab.
   /// It uses UsageStatsManager on Android and DeviceActivity on iOS.
   Future<List<InstalledApp>> getUsageTopApps();
-}
 
-// ✅ REMOVED: The old, duplicate definition of the InstalledApp class has been deleted.
-// This resolves both the 'unused_import' and 'todo' diagnostic messages.
+  /// ✅ ADDED: Fetches the total combined usage time for a specific list of apps since midnight.
+  ///
+  /// Takes a list of app bundle IDs (package names).
+  /// Returns a [Duration] representing the total time in the foreground.
+  Future<Duration> getUsageForApps(List<String> packageNames);
+
+  /// ✅ ADDED: Fetches the total screen-on time for all apps on the device since midnight.
+  Future<Duration> getTotalDeviceUsage();
+}

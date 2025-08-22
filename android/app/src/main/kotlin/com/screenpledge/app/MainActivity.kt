@@ -11,7 +11,7 @@ import android.graphics.drawable.Drawable
 import android.os.Build
 import android.os.Process
 import android.provider.Settings
-import android.util.Log // ✅ ADDED: For native logging
+import android.util.Log
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -19,56 +19,109 @@ import java.io.ByteArrayOutputStream
 import java.util.Calendar
 
 class MainActivity: FlutterActivity() {
+    // The unique name for our platform channel.
     private val CHANNEL = "com.screenpledge.app/screentime"
-    private val LOG_TAG = "ScreenPledgeNative" // ✅ ADDED: A tag for our logs
+    // A tag for filtering our native logs in Logcat.
+    private val LOG_TAG = "ScreenPledgeNative"
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
 
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL).setMethodCallHandler {
             call, result ->
-            when (call.method) {
-                "requestPermission" -> {
-                    openUsageAccessSettings()
-                    result.success(null)
+            // As a security best practice, we check for permission before executing
+            // any method that requires access to usage stats.
+            if (call.method != "requestPermission" && call.method != "isPermissionGranted") {
+                if (!canQueryUsageStats()) {
+                    // If permission is not granted, we return a specific error code
+                    // that the Dart side can understand and handle gracefully.
+                    result.error("PERMISSION_DENIED", "Usage access permission is not granted.", null)
+                    return@setMethodCallHandler
                 }
-                "isPermissionGranted" -> {
-                    result.success(canQueryUsageStats())
-                }
-                "getInstalledApps" -> {
-                    try {
+            }
+
+            // We wrap the logic in a try-catch block to handle any unexpected native errors.
+            try {
+                when (call.method) {
+                    "requestPermission" -> {
+                        openUsageAccessSettings()
+                        result.success(null)
+                    }
+                    "isPermissionGranted" -> {
+                        result.success(canQueryUsageStats())
+                    }
+                    "getInstalledApps" -> {
                         result.success(getInstalledApps())
-                    } catch (e: Exception) {
-                        Log.e(LOG_TAG, "Error in getInstalledApps: ${e.message}", e)
-                        result.error("NATIVE_ERROR", "Failed to get installed apps: ${e.message}", null)
                     }
-                }
-                "getUsageTopApps" -> {
-                     if (!canQueryUsageStats()) {
-                        result.error("PERMISSION_DENIED", "Usage access permission is not granted.", null)
-                        return@setMethodCallHandler
-                    }
-                    try {
+                    "getUsageTopApps" -> {
                         result.success(getUsageTopApps())
-                    } catch (e: Exception) {
-                        Log.e(LOG_TAG, "Error in getUsageTopApps: ${e.message}", e)
-                        result.error("NATIVE_ERROR", "Failed to get usage stats: ${e.message}", null)
+                    }
+                    // ✅ ADDED: New handler for getting usage of specific apps.
+                    "getUsageForApps" -> {
+                        // We expect a list of package name strings from Flutter.
+                        val packageNames = call.argument<List<String>>("packageNames")
+                        if (packageNames == null) {
+                            result.error("INVALID_ARGUMENT", "packageNames argument is missing or not a list.", null)
+                            return@setMethodCallHandler
+                        }
+                        // Call the new function and return the result in milliseconds.
+                        result.success(getUsageForApps(packageNames))
+                    }
+                    // ✅ ADDED: New handler for getting total device usage.
+                    "getTotalDeviceUsage" -> {
+                        result.success(getTotalDeviceUsage())
+                    }
+                    else -> {
+                        result.notImplemented()
                     }
                 }
-                else -> {
-                    result.notImplemented()
-                }
+            } catch (e: Exception) {
+                Log.e(LOG_TAG, "Error handling method ${call.method}: ${e.message}", e)
+                result.error("NATIVE_ERROR", "An unexpected error occurred on the native side: ${e.message}", null)
             }
         }
     }
 
-    // This method remains unchanged.
+    // ✅ ADDED: New function to get combined usage for a specific list of apps since midnight.
+    private fun getUsageForApps(packageNames: List<String>): Long {
+        val usageStatsManager = getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
+        val (startTime, endTime) = getTodayTimeRange()
+        val stats = usageStatsManager.queryUsageStats(UsageStatsManager.INTERVAL_DAILY, startTime, endTime)
+        
+        // Filter the stats to only include the apps we care about and sum their foreground time.
+        return stats.filter { packageNames.contains(it.packageName) }
+                    .sumOf { it.totalTimeInForeground }
+    }
+
+    // ✅ ADDED: New function to get the total usage for all apps on the device since midnight.
+    private fun getTotalDeviceUsage(): Long {
+        val usageStatsManager = getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
+        val (startTime, endTime) = getTodayTimeRange()
+        val stats = usageStatsManager.queryUsageStats(UsageStatsManager.INTERVAL_DAILY, startTime, endTime)
+        
+        // Sum the foreground time for all returned stats.
+        return stats.sumOf { it.totalTimeInForeground }
+    }
+
+    // ✅ ADDED: A helper to get the start and end time for "today" (from midnight to now).
+    private fun getTodayTimeRange(): Pair<Long, Long> {
+        val calendar = Calendar.getInstance()
+        calendar.set(Calendar.HOUR_OF_DAY, 0)
+        calendar.set(Calendar.MINUTE, 0)
+        calendar.set(Calendar.SECOND, 0)
+        calendar.set(Calendar.MILLISECOND, 0)
+        val startTime = calendar.timeInMillis
+        val endTime = System.currentTimeMillis()
+        return Pair(startTime, endTime)
+    }
+
+    // --- Existing Helper Methods ---
+
     private fun openUsageAccessSettings() {
         val intent = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)
         startActivity(intent)
     }
 
-    // This method remains unchanged.
     private fun canQueryUsageStats(): Boolean {
         val appOps = getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
         val mode = appOps.checkOpNoThrow(
@@ -89,10 +142,6 @@ class MainActivity: FlutterActivity() {
         }
     }
 
-    /**
-     * ✅ REWRITTEN: Gets the definitive list of all user-launchable applications.
-     * This version is simpler and relies on the <queries> tag in the manifest.
-     */
     private fun getInstalledApps(): List<Map<String, Any?>> {
         val pm = this.packageManager
         val mainIntent = Intent(Intent.ACTION_MAIN, null).addCategory(Intent.CATEGORY_LAUNCHER)
@@ -104,7 +153,6 @@ class MainActivity: FlutterActivity() {
             pm.queryIntentActivities(mainIntent, 0)
         }
         
-        // ✅ LOGGING ADDED: See how many apps the OS returns before any filtering.
         Log.d(LOG_TAG, "queryIntentActivities returned ${resolvedInfos.size} apps.")
 
         for (info in resolvedInfos) {
@@ -120,21 +168,15 @@ class MainActivity: FlutterActivity() {
             ))
         }
         
-        // ✅ LOGGING ADDED: See the final count of apps being sent to Flutter.
         Log.d(LOG_TAG, "Final app list count for getInstalledApps: ${appList.size}")
         return appList.sortedBy { it["name"] as String }
     }
 
-    /**
-     * ✅ REWRITTEN: Gets the most used apps, filtered by the definitive list of launchable apps.
-     */
     private fun getUsageTopApps(): List<Map<String, Any?>> {
         val pm = this.packageManager
-        // Step 1: Get the definitive set of launchable package names.
         val launchablePackages = getLaunchablePackages(pm)
         Log.d(LOG_TAG, "Found ${launchablePackages.size} launchable packages for filtering usage stats.")
 
-        // Step 2: Query usage stats.
         val usageStatsManager = getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
         val calendar = Calendar.getInstance()
         calendar.add(Calendar.DAY_OF_YEAR, -7)
@@ -150,7 +192,6 @@ class MainActivity: FlutterActivity() {
             .toList()
             .sortedByDescending { it.second }
 
-        // Step 3: Filter usage stats against the launchable packages set.
         for ((packageName, totalTime) in aggregatedStats) {
             if (totalTime <= 0) continue
             if (launchablePackages.contains(packageName)) {
@@ -172,7 +213,6 @@ class MainActivity: FlutterActivity() {
         return appList.take(20)
     }
 
-    // This helper function remains unchanged but is still critical.
     private fun getLaunchablePackages(pm: PackageManager): Set<String> {
         val mainIntent = Intent(Intent.ACTION_MAIN, null).addCategory(Intent.CATEGORY_LAUNCHER)
         val packages = mutableSetOf<String>()
@@ -189,9 +229,7 @@ class MainActivity: FlutterActivity() {
         return packages
     }
 
-    // This helper function remains unchanged.
     private fun drawableToBytes(drawable: Drawable): ByteArray {
-        // ✅ FIXED: The body of this function was missing in the previous turn.
         val bitmap = Bitmap.createBitmap(drawable.intrinsicWidth, drawable.intrinsicHeight, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
         drawable.setBounds(0, 0, canvas.width, canvas.height)

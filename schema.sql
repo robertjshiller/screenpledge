@@ -1,6 +1,6 @@
--- ScreenPledge Database Schema v1.1
+-- ScreenPledge Database Schema v1.2
 -- Author: Gemini AI
--- Date: August 3, 2025
+-- Date: August 22, 2025
 
 -- =================================================================
 -- SECTION 1: ENUM TYPE DEFINITIONS
@@ -14,7 +14,7 @@ CREATE TYPE public.goal_type AS ENUM ('total_time', 'custom_group');
 -- Added 'paused' to support the feature of pausing a goal without deactivating it entirely.
 CREATE TYPE public.goal_status AS ENUM ('active', 'inactive', 'paused');
 
-CREATE TYPE public.daily_outcome AS ENUM ('success', 'failure', 'paused', 'forgiven');
+CREATE TYPE public.daily_outcome AS ENUM ('success', 'failure', 'paused', 'forgiven', 'pending_reconciliation');
 CREATE TYPE public.reward_type AS ENUM ('gift_card', 'discount', 'free_trial', 'donation', 'subscription', 'theme');
 CREATE TYPE public.reward_tier AS ENUM ('bronze', 'silver', 'gold', 'platinum');
 
@@ -39,7 +39,7 @@ CREATE TABLE public.profiles (
   show_motivational_nudges boolean NOT NULL DEFAULT true,
   onboarding_completed_survey boolean NOT NULL DEFAULT false,
   onboarding_completed_goal_setup boolean NOT NULL DEFAULT false,
-  onboarding_draft_goal JSONB, -- ✅ FIXED: Added the missing comma.
+  onboarding_draft_goal JSONB,
   onboarding_completed_pledge_setup boolean NOT NULL DEFAULT false,
   created_at timestamp with time zone NOT NULL DEFAULT now(),
   updated_at timestamp with time zone NOT NULL DEFAULT now()
@@ -55,11 +55,18 @@ CREATE TABLE public.goals (
   time_limit_seconds integer NOT NULL,
   tracked_apps jsonb,
   exempt_apps jsonb,
+  -- ✅ ADDED: The timestamp when this goal becomes active.
+  effective_at timestamp with time zone NOT NULL DEFAULT now(),
+  -- ✅ ADDED: The timestamp when this goal is superseded by a new one. NULL for the currently active goal.
+  ended_at timestamp with time zone,
   created_at timestamp with time zone NOT NULL DEFAULT now(),
   updated_at timestamp with time zone NOT NULL DEFAULT now()
 );
-COMMENT ON TABLE public.goals IS 'An immutable log of user-defined goals.';
+COMMENT ON TABLE public.goals IS 'An immutable log of user-defined goals. Active goal is the one where ended_at is NULL.';
 COMMENT ON COLUMN public.goals.user_id IS 'References the public profile, not the private auth user.';
+COMMENT ON COLUMN public.goals.effective_at IS 'The date and time this goal''s rules begin to apply.';
+COMMENT ON COLUMN public.goals.ended_at IS 'The date and time this goal was replaced by a new one.';
+
 
 -- Table: daily_results
 CREATE TABLE public.daily_results (
@@ -69,10 +76,17 @@ CREATE TABLE public.daily_results (
   outcome public.daily_outcome NOT NULL,
   pp_earned integer NOT NULL DEFAULT 0,
   pledge_charged_cents integer NOT NULL DEFAULT 0,
+  -- ✅ ADDED: A snapshot of the user's screen time for this day, for historical accuracy.
+  time_spent_seconds integer,
+  -- ✅ ADDED: A snapshot of the user's goal limit for this day, for historical accuracy.
+  time_limit_seconds integer,
   acknowledged_at timestamp with time zone,
   created_at timestamp with time zone NOT NULL DEFAULT now()
 );
 COMMENT ON TABLE public.daily_results IS 'Immutable log of daily user outcomes.';
+COMMENT ON COLUMN public.daily_results.time_spent_seconds IS 'Snapshot of the final calculated screen time for this day.';
+COMMENT ON COLUMN public.daily_results.time_limit_seconds IS 'Snapshot of the goal''s time limit that was active for this day.';
+
 
 ALTER TABLE public.daily_results ADD CONSTRAINT unique_user_date UNIQUE (user_id, date);
 

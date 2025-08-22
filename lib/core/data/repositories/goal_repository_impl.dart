@@ -15,6 +15,7 @@ class GoalRepositoryImpl implements IGoalRepository {
   @override
   Future<void> commitOnboardingGoal({int? pledgeAmountCents}) async {
     try {
+      // This method calls the RPC and remains unchanged as the RPC handles the logic.
       await _supabaseClient.rpc(
         'commit_onboarding_goal',
         params: {'pledge_amount_cents_input': pledgeAmountCents ?? 0},
@@ -32,33 +33,38 @@ class GoalRepositoryImpl implements IGoalRepository {
         throw const AuthException('User is not authenticated.');
       }
 
+      // ✅ FIXED: This now uses the definitive, modern syntax for checking for a NULL value.
+      // The correct method is `.filter('column_name', 'is', null)`.
       final data = await _supabaseClient
           .from('goals')
-          .select()
+          .select('goal_type, time_limit_seconds, tracked_apps, exempt_apps, effective_at, ended_at')
           .eq('user_id', userId)
-          .eq('status', 'active')
+          .filter('ended_at', 'is', null) // This is the correct syntax.
           .limit(1)
           .maybeSingle();
 
       if (data == null) {
+        // This is a valid state; the user may not have an active goal yet.
         return null;
       }
 
+      // The Goal object is now constructed with the new, richer data.
       return Goal(
         goalType: data['goal_type'] == 'total_time'
             ? GoalType.totalTime
             : GoalType.customGroup,
         timeLimit: Duration(seconds: data['time_limit_seconds']),
-        trackedApps: <InstalledApp>{},
-        exemptApps: <InstalledApp>{},
+        trackedApps: <InstalledApp>{}, // Placeholder for now
+        exemptApps: <InstalledApp>{}, // Placeholder for now
+        effectiveAt: DateTime.parse(data['effective_at']),
+        endedAt: data['ended_at'] != null ? DateTime.parse(data['ended_at']) : null,
       );
     } on PostgrestException catch (e) {
       debugPrint('Error fetching active goal: $e');
       rethrow;
     } catch (e) {
-      debugPrint('An unexpected error occurred: $e');
+      debugPrint('An unexpected error occurred while fetching the active goal: $e');
       rethrow;
     }
   }
 }
-

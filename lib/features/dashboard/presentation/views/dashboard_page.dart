@@ -11,7 +11,7 @@ import 'package:screenpledge/features/dashboard/presentation/widgets/weekly_bar_
 class DashboardPage extends ConsumerWidget {
   const DashboardPage({super.key});
 
-  /// A helper function to format the duration into a readable string.
+  /// A helper function to format a Duration into a readable string like "1h 23m" or "45m".
   String _formatDuration(Duration duration) {
     final hours = duration.inHours;
     final minutes = duration.inMinutes.remainder(60);
@@ -23,98 +23,109 @@ class DashboardPage extends ConsumerWidget {
 
   /// A helper to determine the color of the ring based on progress.
   Color _getProgressColor(double progress) {
-    if (progress >= 0.75) return Colors.red.shade400;
-    if (progress >= 0.50) return Colors.orange.shade400;
-    return AppColors.primaryAccent;
+    if (progress >= 0.9) return Colors.red.shade400;
+    if (progress >= 0.7) return Colors.orange.shade400;
+    return AppColors.buttonFill;
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final dashboardState = ref.watch(dashboardProvider);
+    final dashboardStateAsync = ref.watch(dashboardProvider);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Dashboard'),
         centerTitle: true,
       ),
-      body: dashboardState.when(
+      body: dashboardStateAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stackTrace) => Center(
-          child: Text('An error occurred: $error'),
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Text('An error occurred while loading your dashboard: $error'),
+          ),
         ),
-        data: (activeGoal) {
-          if (activeGoal == null) {
+        data: (dashboardState) {
+          if (dashboardState.activeGoal == null) {
             return const Center(
               child: Text(
                 'No active goal found.\nSet a new goal to get started!',
                 textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 18, color: AppColors.secondaryText),
               ),
             );
           }
 
-          // Progress for the COLOR is based on time USED.
-          final timeUsedProgress = activeGoal.progressPercentage;
-          final color = _getProgressColor(timeUsedProgress);
+          final goal = dashboardState.activeGoal!;
+          final timeSpent = dashboardState.timeSpentToday;
+          final timeLimit = goal.timeLimit;
 
-          // Progress for the RING is based on time REMAINING.
-          final timeLimit = activeGoal.timeLimit;
-          final timeSpent = activeGoal.timeSpent;
           final timeRemaining = timeLimit > timeSpent ? timeLimit - timeSpent : Duration.zero;
           final ringProgress = (timeLimit.inSeconds > 0)
               ? timeRemaining.inSeconds / timeLimit.inSeconds
               : 0.0;
+          
+          final colorProgress = dashboardState.progressPercentage;
+          final color = _getProgressColor(colorProgress);
 
           return Center(
-            child: Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  SizedBox(
-                    width: 250,
-                    height: 250,
-                    child: ProgressRing(
-                      progress: ringProgress, // Use the remaining progress for the visual
-                      progressColor: color,
-                      strokeWidth: 20,
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            _formatDuration(timeRemaining),
-                            style: Theme.of(context).textTheme.headlineLarge,
-                          ),
-                          const Text('remaining'),
-                        ],
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    SizedBox(
+                      width: 250,
+                      height: 250,
+                      child: ProgressRing(
+                        progress: ringProgress.clamp(0.0, 1.0),
+                        progressColor: color,
+                        strokeWidth: 20,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              _formatDuration(timeRemaining),
+                              style: Theme.of(context).textTheme.displayLarge,
+                            ),
+                            const Text(
+                              'remaining',
+                              style: TextStyle(color: AppColors.secondaryText),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 48),
-                  Text(
-                    "Today's Limit: ${_formatDuration(timeLimit)}",
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Time Used: ${_formatDuration(timeSpent)}',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 48), // Add some spacing
-                  const WeeklyBarChart(), // Add the new weekly bar chart
-                ],
+                    const SizedBox(height: 48),
+                    Text(
+                      "Today's Limit: ${_formatDuration(timeLimit)}",
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Time Used: ${_formatDuration(timeSpent)}',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 48),
+                    
+                    // ✅ CHANGED: We now pass the live, real-time data for "today"
+                    // directly to the WeeklyBarChart widget.
+                    WeeklyBarChart(
+                      dailyData: dashboardState.weeklyResults,
+                      timeSpentToday: timeSpent,
+                      timeLimitToday: timeLimit,
+                    ),
+                  ],
+                ),
               ),
             ),
           );
         },
       ),
-      // We keep the bottom navigation bar for consistent app navigation.
-      // Note: The state management for the nav bar index is simplified here.
-      // In a real app, this would likely be managed by a separate provider.
       bottomNavigationBar: BottomNavBar(
-        currentIndex: 0, // Hardcoded to the dashboard index
-        onTap: (index) {
-          // TODO: Implement navigation logic
-        },
+        currentIndex: 0,
+        onTap: (index) { /* TODO: Implement navigation logic */ },
       ),
     );
   }

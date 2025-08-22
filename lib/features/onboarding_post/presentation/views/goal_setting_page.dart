@@ -1,15 +1,16 @@
+// lib/features/onboarding_post/presentation/views/goal_setting_page.dart
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:screenpledge/core/common_widgets/primary_button.dart';
 import 'package:screenpledge/core/config/theme/app_colors.dart';
-import 'package:screenpledge/core/di/profile_providers.dart'; // ✅ ADDED: To read the profile for draft data.
+import 'package:screenpledge/core/di/profile_providers.dart';
 import 'package:screenpledge/core/domain/entities/installed_app.dart';
 import 'package:screenpledge/features/onboarding_post/presentation/viewmodels/goal_setting_viewmodel.dart';
 import 'package:screenpledge/features/onboarding_post/presentation/views/app_selection_page.dart';
 import 'package:screenpledge/features/onboarding_post/presentation/views/pledge_page.dart';
 
-// ✅ CHANGED: Converted to a ConsumerStatefulWidget to use Riverpod for state management.
 class GoalSettingPage extends ConsumerStatefulWidget {
   const GoalSettingPage({super.key});
 
@@ -18,44 +19,48 @@ class GoalSettingPage extends ConsumerStatefulWidget {
 }
 
 class _GoalSettingPageState extends ConsumerState<GoalSettingPage> {
-  // These remain as local UI state, managed by the widget itself.
+  // These are the local UI state variables for the form.
   bool _isTotalTimeSelected = true;
   Duration _selectedTime = const Duration(hours: 3, minutes: 15);
   Set<InstalledApp> _exemptApps = {};
   Set<InstalledApp> _trackedApps = {};
 
-  // ✅ ADDED: A method to pre-populate the form from the user's profile.
   @override
   void initState() {
     super.initState();
     // Use a post-frame callback to safely read a provider within initState.
-    // This ensures the widget is fully built before we try to access the provider.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // We use `ref.read` because we only need the value once for initialization.
       final profile = ref.read(myProfileProvider).value;
-
-      // Check if a draft goal exists on the user's profile.
       if (profile?.onboardingDraftGoal != null) {
         final draftGoal = profile!.onboardingDraftGoal!;
-        // If it does, update the local state to restore the user's progress.
         setState(() {
           _isTotalTimeSelected = draftGoal['goalType'] == 'total_time';
           _selectedTime = Duration(seconds: draftGoal['timeLimit']);
-          // Note: Deserializing the app lists is more complex and can be added later.
-          // It would require matching package names from the JSON with the full
-          // list of InstalledApp objects fetched from the device.
-          // For now, restoring the simple values is a huge win for UX.
+          // Note: Restoring app lists is a future enhancement.
         });
       }
     });
   }
 
+  // ✅ ADDED: A boolean getter to act as our validation rule.
+  /// The "Save & Continue" button is only enabled if this returns true.
+  bool get _isGoalConfigurationValid {
+    // The goal is valid if the user selects "Total Screen Time"...
+    if (_isTotalTimeSelected) {
+      return true;
+    }
+    // ...OR if they select "Custom App Group" AND have chosen at least one app.
+    if (!_isTotalTimeSelected && _trackedApps.isNotEmpty) {
+      return true;
+    }
+    // Otherwise, the configuration is invalid.
+    return false;
+  }
+
   /* ───────────────────────── TIME-PICKER DIALOG ───────────────────────── */
 
-  // This method remains unchanged.
   void _showTimePicker() {
     Duration tempDuration = _selectedTime;
-
     showCupertinoDialog(
       context: context,
       builder: (BuildContext context) {
@@ -74,24 +79,14 @@ class _GoalSettingPageState extends ConsumerState<GoalSettingPage> {
           ),
           actions: <CupertinoDialogAction>[
             CupertinoDialogAction(
-              child: Text(
-                'Cancel',
-                style: TextStyle(color: AppColors.primaryText),
-              ),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
+              child: Text('Cancel', style: TextStyle(color: AppColors.primaryText)),
+              onPressed: () => Navigator.of(context).pop(),
             ),
             CupertinoDialogAction(
               isDefaultAction: true,
-              child: Text(
-                'OK',
-                style: TextStyle(color: AppColors.primaryText),
-              ),
+              child: Text('OK', style: TextStyle(color: AppColors.primaryText)),
               onPressed: () {
-                setState(() {
-                  _selectedTime = tempDuration;
-                });
+                setState(() => _selectedTime = tempDuration);
                 Navigator.of(context).pop();
               },
             ),
@@ -101,7 +96,8 @@ class _GoalSettingPageState extends ConsumerState<GoalSettingPage> {
     );
   }
 
-  // This method remains unchanged.
+  /* ───────────────────────── APP SELECTION LOGIC ──────────────────────── */
+
   Future<void> _selectApps({
     required String title,
     required Set<InstalledApp> currentSelection,
@@ -117,9 +113,7 @@ class _GoalSettingPageState extends ConsumerState<GoalSettingPage> {
       ),
     );
     if (result != null) {
-      setState(() {
-        onUpdate(result);
-      });
+      setState(() => onUpdate(result));
     }
   }
 
@@ -128,15 +122,11 @@ class _GoalSettingPageState extends ConsumerState<GoalSettingPage> {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
-
-    // ✅ ADDED: Watch the ViewModel's state for loading/error status.
     final viewModelState = ref.watch(goalSettingViewModelProvider);
 
-    // ✅ ADDED: A listener to react to state changes (e.g., success or error).
     ref.listen<AsyncValue<void>>(goalSettingViewModelProvider, (previous, next) {
       next.whenOrNull(
         error: (error, stackTrace) {
-          // On error, show a SnackBar.
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Error saving draft: ${error.toString()}'),
@@ -145,9 +135,6 @@ class _GoalSettingPageState extends ConsumerState<GoalSettingPage> {
           );
         },
         data: (_) {
-          // On success (when state goes from loading back to data), navigate.
-          // The check `previous?.isLoading == true` ensures this only triggers
-          // after a successful save operation.
           if (previous?.isLoading == true) {
             Navigator.push(
               context,
@@ -161,23 +148,18 @@ class _GoalSettingPageState extends ConsumerState<GoalSettingPage> {
     return Scaffold(
       appBar: AppBar(),
       body: SafeArea(
-        // This pattern allows the use of Spacers for proportional layout
-        // while ensuring the content can scroll if it overflows, for example
-        // when the keyboard is displayed on a small screen.
         child: LayoutBuilder(
           builder: (context, constraints) {
             return SingleChildScrollView(
               child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  minHeight: constraints.maxHeight,
-                ),
+                constraints: BoxConstraints(minHeight: constraints.maxHeight),
                 child: IntrinsicHeight(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 24.0),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        const Spacer(flex: 1), // Replaced SizedBox(height: 16)
+                        const Spacer(flex: 1),
                         Text(
                           'Set Your Goal',
                           style: textTheme.displayLarge?.copyWith(fontSize: 28),
@@ -189,13 +171,12 @@ class _GoalSettingPageState extends ConsumerState<GoalSettingPage> {
                           style: textTheme.bodyLarge,
                           textAlign: TextAlign.center,
                         ),
-                        const Spacer(flex: 2), // Replaced SizedBox(height: 32)
+                        const Spacer(flex: 2),
 
                         // ----- Goal-type cards -----
                         _GoalTypeCard(
                           title: 'Total Screen Time',
-                          description:
-                              'Hold yourself accountable for your entire daily phone usage.',
+                          description: 'Hold yourself accountable for your entire daily phone usage.',
                           isSelected: _isTotalTimeSelected,
                           onTap: () => setState(() => _isTotalTimeSelected = true),
                           child: _AppSelectionButton(
@@ -224,7 +205,21 @@ class _GoalSettingPageState extends ConsumerState<GoalSettingPage> {
                             ),
                           ),
                         ),
-                        const Spacer(flex: 3), // Replaced SizedBox(height: 48)
+
+                        // ✅ ADDED: The conditional validation message.
+                        // This widget only appears when the user has selected "Custom App Group"
+                        // but has not yet selected any apps.
+                        if (!_isTotalTimeSelected && _trackedApps.isEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 12.0),
+                            child: Text(
+                              'Please select at least one app to track.',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(color: Colors.orange.shade800),
+                            ),
+                          ),
+                        
+                        const Spacer(flex: 3),
 
                         // ----- Daily limit display -----
                         Text(
@@ -234,16 +229,15 @@ class _GoalSettingPageState extends ConsumerState<GoalSettingPage> {
                         ),
                         const SizedBox(height: 16),
                         _TimeDisplay(time: _selectedTime, onTap: _showTimePicker),
-                        const Spacer(flex: 3), // Replaced SizedBox(height: 48)
+                        const Spacer(flex: 3),
 
                         // ----- Save button -----
                         PrimaryButton(
-                          // ✅ CHANGED: Button text now reflects the action of continuing.
                           text: viewModelState.isLoading ? 'Saving...' : 'Save & Continue',
-                          onPressed: viewModelState.isLoading
-                              ? null // Disable button while loading.
-                              : () {
-                                  // ✅ CHANGED: Call the new ViewModel method to save the draft.
+                          // ✅ CHANGED: The button is now disabled if the configuration is invalid
+                          // OR if the ViewModel is in a loading state.
+                          onPressed: _isGoalConfigurationValid && !viewModelState.isLoading
+                              ? () {
                                   ref
                                       .read(goalSettingViewModelProvider.notifier)
                                       .saveDraftGoalAndContinue(
@@ -252,9 +246,10 @@ class _GoalSettingPageState extends ConsumerState<GoalSettingPage> {
                                         exemptApps: _exemptApps,
                                         trackedApps: _trackedApps,
                                       );
-                                },
+                                }
+                              : null,
                         ),
-                        const Spacer(flex: 1), // Replaced SizedBox(height: 24)
+                        const Spacer(flex: 1),
                       ],
                     ),
                   ),
