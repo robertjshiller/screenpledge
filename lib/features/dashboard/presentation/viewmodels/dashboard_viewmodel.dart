@@ -1,5 +1,6 @@
 // lib/features/dashboard/presentation/viewmodels/dashboard_viewmodel.dart
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:screenpledge/core/di/daily_result_providers.dart';
 import 'package:screenpledge/core/di/goal_providers.dart';
@@ -10,33 +11,40 @@ import 'package:screenpledge/core/services/screen_time_service.dart';
 
 /// A state object that holds all the data required by the Dashboard UI.
 ///
-/// This is an immutable object, which is a best practice for state management.
-/// It combines data from multiple sources (Supabase and the device's native APIs)
+/// This is an immutable object that combines data from multiple asynchronous sources
 /// into a single, easy-to-use object for the presentation layer.
 class DashboardState {
-  /// The user's currently active goal. Can be null if no goal is set.
+  /// The user's currently active goal from the database. Can be null.
   final Goal? activeGoal;
+
+  /// A flag indicating if the active goal's `effective_at` date has passed.
+  /// This determines whether to show the "Goal Pending" or "Active Goal" UI.
+  final bool isGoalEffectiveNow;
 
   /// The user's screen time usage for today, calculated according to their goal.
   final Duration timeSpentToday;
 
-  /// The list of results from the last 7 days for the weekly chart.
+  /// The list of recorded results from the last 7 days for the weekly chart.
   final List<DailyResult> weeklyResults;
+
+  /// ✅ ADDED: A map of raw historical usage data from the device.
+  /// This is used to power the "Device-First" bar chart for new users.
+  final Map<DateTime, Duration> historicalUsage;
 
   const DashboardState({
     this.activeGoal,
+    required this.isGoalEffectiveNow,
     required this.timeSpentToday,
     required this.weeklyResults,
+    required this.historicalUsage,
   });
 
-  /// A computed property to get the progress percentage of time used (0.0 to 1.0).
-  /// This is useful for determining the color of the progress ring.
+  /// A computed property to get the progress percentage of time used (0.0 to 1.0+).
   double get progressPercentage {
     if (activeGoal == null || activeGoal!.timeLimit.inSeconds == 0) {
       return 0.0;
     }
     final progress = timeSpentToday.inSeconds / activeGoal!.timeLimit.inSeconds;
-    // We don't clamp here, so the UI can know if the user has gone over their limit.
     return progress;
   }
 }
@@ -45,68 +53,69 @@ class DashboardState {
 ///
 /// This is a [FutureProvider] that orchestrates fetching all the necessary data
 /// from different sources and combines them into a single [DashboardState] object.
-/// It acts as the "ViewModel" for the dashboard.
-final dashboardProvider = FutureProvider.autoDispose<DashboardState>((
-  ref,
-) async {
-  // This provider will re-run automatically if any of the providers it watches change.
-  // For example, if the activeGoalProvider is invalidated, this will refetch all data.
-
-  // 1. Fetch the user's active goal definition from Supabase.
-  // We watch the `activeGoalProvider.future` to get the result of the async operation.
-  final goal = await ref.watch(activeGoalProvider.future);
-
-  // 2. Fetch the results for the last 7 days for the bar chart.
-  // We use `ref.read` here because this data is less likely to change during the session.
-  final weeklyResults = await ref.read(getLast7DaysResultsUseCaseProvider)();
-
-  // 3. If there's no active goal, we can stop here and return a state
-  // that reflects this. The UI will know to show a "No goal set" message.
-  if (goal == null) {
-    return DashboardState(
-      activeGoal: null,
-      timeSpentToday: Duration.zero,
-      weeklyResults: weeklyResults,
-    );
-  }
-
-  // 4. Fetch today's screen time from the device, based on the goal type.
+final dashboardProvider = FutureProvider.autoDispose<DashboardState>((ref) async {
+  debugPrint('--- [DashboardProvider] START ---');
   final screenTimeService = ref.read(screenTimeServiceProvider);
-  Duration timeSpentToday;
 
-  // This is the core business logic for calculating today's progress.
-  if (goal.goalType == GoalType.totalTime) {
-    // For a "Total Time" goal, get total usage and subtract exempt apps.
-    final totalUsage = await screenTimeService.getTotalDeviceUsage();
+  // --- Step 1: Fetch all data sources in parallel for performance ---
+  debugPrint('[DashboardProvider] Step 1: Fetching all data sources in parallel...');
+  
+  final now = DateTime.now();
+  final sevenDaysAgo = now.subtract(const Duration(days: 6));
 
-    // We need the package names from the exempt apps list.
-    final exemptPackageNames = goal.exemptApps
-        .map((app) => app.packageName)
-        .toList();
-    final exemptUsage = await screenTimeService.getUsageForApps(
-      exemptPackageNames,
-    );
+  // Use Future.wait to run these independent fetches concurrently.
+  final results = await Future.wait([
+    ref.watch(activeGoalProvider.future),
+    ref.read(getLast7DaysResultsUseCaseProvider)(),
+    screenTimeService.getUsageForDateRange(sevenDaysAgo, now),
+  ]);
 
-    timeSpentToday = totalUsage - exemptUsage;
-    // Ensure duration doesn't go negative if there's an overlap in reporting.
-    if (timeSpentToday.isNegative) {
-      timeSpentToday = Duration.zero;
+  // --- Step 2: Process the fetched data ---
+  debugPrint('[DashboardProvider] Step 2: Processing fetched data...');
+  final goal = results[0] as Goal?;
+  final weeklyResults = results[1] as List<DailyResult>;
+  final historicalUsage = results[2] as Map<DateTime, Duration>;
+
+  debugPrint('  - Goal found: ${goal != null}');
+  debugPrint('  - Historical results found: ${weeklyResults.length}');
+  debugPrint('  - Historical device usage days found: ${historicalUsage.length}');
+
+  // --- Step 3: Determine if the goal is currently effective ---
+  bool isGoalEffectiveNow = false;
+  if (goal != null) {
+    isGoalEffectiveNow = goal.effectiveAt.isBefore(now);
+  }
+  debugPrint('[DashboardProvider] Step 3: Is goal effective now? $isGoalEffectiveNow');
+
+  // --- Step 4: Calculate today's live usage (only if the goal is effective) ---
+  Duration timeSpentToday = Duration.zero;
+  if (goal != null && isGoalEffectiveNow) {
+    debugPrint('[DashboardProvider] Step 4: Goal is effective. Calculating live usage for today...');
+    if (goal.goalType == GoalType.totalTime) {
+      final totalUsage = await screenTimeService.getTotalDeviceUsage();
+      final exemptPackageNames = goal.exemptApps.map((app) => app.packageName).toList();
+      final exemptUsage = await screenTimeService.getUsageForApps(exemptPackageNames);
+      timeSpentToday = totalUsage - exemptUsage;
+      if (timeSpentToday.isNegative) timeSpentToday = Duration.zero;
+      debugPrint('  - Total Time calculation: $totalUsage - $exemptUsage = $timeSpentToday');
+    } else {
+      final trackedPackageNames = goal.trackedApps.map((app) => app.packageName).toList();
+      timeSpentToday = await screenTimeService.getUsageForApps(trackedPackageNames);
+      debugPrint('  - Custom Group calculation: Time spent = $timeSpentToday');
     }
   } else {
-    // For a "Custom Group" goal, get usage only for the tracked apps.
-    final trackedPackageNames = goal.trackedApps
-        .map((app) => app.packageName)
-        .toList();
-    timeSpentToday = await screenTimeService.getUsageForApps(
-      trackedPackageNames,
-    );
+    debugPrint('[DashboardProvider] Step 4: Goal is not effective yet. Skipping live usage fetch.');
   }
 
-  // 5. Combine all the fetched and calculated data into the final state object and return it.
-  // The UI will receive this object and have everything it needs to render.
-  return DashboardState(
+  // --- Step 5: Construct and return the final state object ---
+  final finalState = DashboardState(
     activeGoal: goal,
+    isGoalEffectiveNow: isGoalEffectiveNow,
     timeSpentToday: timeSpentToday,
     weeklyResults: weeklyResults,
+    historicalUsage: historicalUsage,
   );
+  debugPrint('[DashboardProvider] Step 5: Final state created.');
+  debugPrint('--- [DashboardProvider] END ---');
+  return finalState;
 });

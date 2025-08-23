@@ -42,7 +42,7 @@ class _GoalSettingPageState extends ConsumerState<GoalSettingPage> {
     });
   }
 
-  // ✅ ADDED: A boolean getter to act as our validation rule.
+  /// A boolean getter to act as our validation rule.
   /// The "Save & Continue" button is only enabled if this returns true.
   bool get _isGoalConfigurationValid {
     // The goal is valid if the user selects "Total Screen Time"...
@@ -124,6 +124,7 @@ class _GoalSettingPageState extends ConsumerState<GoalSettingPage> {
     final textTheme = Theme.of(context).textTheme;
     final viewModelState = ref.watch(goalSettingViewModelProvider);
 
+    // This listener reacts to state changes in the ViewModel.
     ref.listen<AsyncValue<void>>(goalSettingViewModelProvider, (previous, next) {
       next.whenOrNull(
         error: (error, stackTrace) {
@@ -135,7 +136,19 @@ class _GoalSettingPageState extends ConsumerState<GoalSettingPage> {
           );
         },
         data: (_) {
+          // This block runs on a successful save operation.
           if (previous?.isLoading == true) {
+            debugPrint('[GoalSettingPage] Draft goal saved successfully.');
+            
+            // ✅ THE FIX: Invalidate the myProfileProvider.
+            // This tells Riverpod to clear its cached profile data. The next time
+            // a widget (like PledgePage) asks for the profile, Riverpod will be
+            // forced to re-fetch it from the server, getting the fresh data
+            // that includes our newly saved draft goal.
+            ref.invalidate(myProfileProvider);
+            debugPrint('[GoalSettingPage] myProfileProvider cache invalidated.');
+
+            // Now, we can safely navigate to the PledgePage.
             Navigator.push(
               context,
               MaterialPageRoute(builder: (context) => const PledgePage()),
@@ -206,9 +219,7 @@ class _GoalSettingPageState extends ConsumerState<GoalSettingPage> {
                           ),
                         ),
 
-                        // ✅ ADDED: The conditional validation message.
-                        // This widget only appears when the user has selected "Custom App Group"
-                        // but has not yet selected any apps.
+                        // The conditional validation message.
                         if (!_isTotalTimeSelected && _trackedApps.isEmpty)
                           Padding(
                             padding: const EdgeInsets.only(top: 12.0),
@@ -234,8 +245,6 @@ class _GoalSettingPageState extends ConsumerState<GoalSettingPage> {
                         // ----- Save button -----
                         PrimaryButton(
                           text: viewModelState.isLoading ? 'Saving...' : 'Save & Continue',
-                          // ✅ CHANGED: The button is now disabled if the configuration is invalid
-                          // OR if the ViewModel is in a loading state.
                           onPressed: _isGoalConfigurationValid && !viewModelState.isLoading
                               ? () {
                                   ref
@@ -264,7 +273,6 @@ class _GoalSettingPageState extends ConsumerState<GoalSettingPage> {
 }
 
 /* ────────────────────────── GOAL-TYPE CARD ────────────────────────── */
-// This widget's implementation remains unchanged.
 class _GoalTypeCard extends StatelessWidget {
   final String title;
   final String description;
@@ -332,7 +340,6 @@ class _GoalTypeCard extends StatelessWidget {
 }
 
 /* ─────────────────── APP SELECTION BUTTON ─────────────────── */
-// This widget's implementation remains unchanged.
 class _AppSelectionButton extends StatelessWidget {
   final String label;
   final int count;
@@ -393,7 +400,6 @@ class _AppSelectionButton extends StatelessWidget {
 }
 
 /* ────────────────────────── TIME DISPLAY ────────────────────────── */
-// This widget's implementation remains unchanged.
 class _TimeDisplay extends StatelessWidget {
   final Duration time;
   final VoidCallback onTap;

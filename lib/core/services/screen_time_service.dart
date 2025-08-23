@@ -12,23 +12,20 @@ abstract class ScreenTimeService {
   Future<bool> isPermissionGranted();
 
   /// Fetches a list of all user-installed, launchable applications.
-  ///
-  /// On Android, this queries the PackageManager.
-  /// On iOS, this functionality is not supported and this method should return an empty list.
   Future<List<InstalledApp>> getInstalledApps();
 
   /// Fetches a list of the most used apps based on screen time.
-  ///
-  /// This provides the data for the "Suggested" or "Time Sinks" tab.
-  /// It uses UsageStatsManager on Android and DeviceActivity on iOS.
   Future<List<InstalledApp>> getUsageTopApps();
 
-  /// ✅ ADDED: Fetches the total combined usage time for a specific list of apps since midnight.
-  ///
-  /// Takes a list of app bundle IDs (package names).
-  /// Returns a [Duration] representing the total time in the foreground.
+  /// Fetches the total combined usage time for a specific list of apps since midnight.
   Future<Duration> getUsageForApps(List<String> packageNames);
 
-  /// ✅ ADDED: Fetches the total screen-on time for all apps on the device since midnight.
+  /// Fetches the total screen-on time for all apps on the device since midnight.
   Future<Duration> getTotalDeviceUsage();
+
+  /// ✅ ADDED: Fetches historical usage data for a given date range.
+  ///
+  /// Returns a map where the key is the [DateTime] (normalized to midnight)
+  /// and the value is the total usage [Duration] for that day.
+  Future<Map<DateTime, Duration>> getUsageForDateRange(DateTime start, DateTime end);
 }
