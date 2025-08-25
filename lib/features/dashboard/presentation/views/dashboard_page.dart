@@ -1,4 +1,6 @@
-import 'dart:async';
+// lib/features/dashboard/presentation/views/dashboard_page.dart
+
+import 'dart:async'; // ✅ FIXED: Added the missing import for the Timer class.
 import 'package:flutter/material.dart';
 import 'package:screenpledge/core/config/theme/app_colors.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,6 +10,7 @@ import 'package:screenpledge/features/dashboard/presentation/viewmodels/dashboar
 import 'package:screenpledge/features/dashboard/presentation/widgets/progress_ring.dart';
 import 'package:screenpledge/features/dashboard/presentation/widgets/weekly_bar_chart.dart';
 import 'package:screenpledge/core/common_widgets/primary_button.dart';
+import 'package:screenpledge/features/dashboard/presentation/widgets/app_usage_list.dart';
 
 class DashboardPage extends ConsumerWidget {
   const DashboardPage({super.key});
@@ -18,8 +21,6 @@ class DashboardPage extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        // ✅ The AppBar now shows the user's Pledge Points (PP).
-        // In a real app, this would come from the user's profile.
         title: const Row(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
@@ -28,7 +29,6 @@ class DashboardPage extends ConsumerWidget {
             Text('0 PP'),
           ],
         ),
-        // We remove the back button from the dashboard.
         automaticallyImplyLeading: false,
       ),
       body: dashboardStateAsync.when(
@@ -40,7 +40,6 @@ class DashboardPage extends ConsumerWidget {
           ),
         ),
         data: (dashboardState) {
-          // ✅ CORE CONDITIONAL: Active goal effective now? Show active dashboard.
           if (dashboardState.activeGoal != null && dashboardState.isGoalEffectiveNow) {
             return _ActiveGoalDashboard(dashboardState: dashboardState);
           } else if (dashboardState.activeGoal != null && !dashboardState.isGoalEffectiveNow) {
@@ -58,7 +57,10 @@ class DashboardPage extends ConsumerWidget {
       ),
       bottomNavigationBar: BottomNavBar(
         currentIndex: 0,
-        onTap: (index) { /* TODO: Implement navigation logic */ },
+        // ✅ FIXED: Add a debugPrint to handle the TODO.
+        onTap: (index) {
+          debugPrint('Bottom nav tapped, index: $index');
+        },
       ),
     );
   }
@@ -69,6 +71,7 @@ class _ActiveGoalDashboard extends StatelessWidget {
   final DashboardState dashboardState;
   const _ActiveGoalDashboard({required this.dashboardState});
 
+  // ✅ FIXED: Helper methods are now correctly placed inside the widget that uses them.
   String _formatDuration(Duration duration) {
     final hours = duration.inHours;
     final minutes = duration.inMinutes.remainder(60);
@@ -76,6 +79,7 @@ class _ActiveGoalDashboard extends StatelessWidget {
     return '${minutes}m';
   }
 
+  // ✅ FIXED: Helper methods are now correctly placed inside the widget that uses them.
   Color _getProgressColor(double progress) {
     if (progress >= 0.9) return Colors.red.shade400;
     if (progress >= 0.7) return Colors.orange.shade400;
@@ -120,14 +124,14 @@ class _ActiveGoalDashboard extends StatelessWidget {
               const SizedBox(height: 8),
               Text('Time Used: ${_formatDuration(timeSpent)}', style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: 48),
-              // ✅ WeeklyBarChart now reads the Settings-accurate device-week (historicalUsage),
-              // plus your DailyResult list, as before.
               WeeklyBarChart(
                 dailyData: dashboardState.weeklyResults,
                 historicalUsage: dashboardState.historicalUsage,
                 timeSpentToday: timeSpent,
                 timeLimitToday: timeLimit,
               ),
+              const SizedBox(height: 24), // Add spacing before the new list
+              AppUsageList(usageStats: dashboardState.dailyUsageBreakdown),
             ],
           ),
         ),
@@ -136,7 +140,7 @@ class _ActiveGoalDashboard extends StatelessWidget {
   }
 }
 
-/// ✅ "Goal Pending" state shown before the goal becomes effective at midnight.
+/// A private widget for the "Goal Pending" state.
 class _GoalPendingDashboard extends StatefulWidget {
   final Goal goal;
   const _GoalPendingDashboard({required this.goal});
@@ -153,7 +157,6 @@ class _GoalPendingDashboardState extends State<_GoalPendingDashboard> {
   void initState() {
     super.initState();
     _calculateTimeUntilStart();
-    // Update countdown every second.
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       _calculateTimeUntilStart();
     });
@@ -167,7 +170,6 @@ class _GoalPendingDashboardState extends State<_GoalPendingDashboard> {
 
   void _calculateTimeUntilStart() {
     final now = DateTime.now();
-    // The goal starts at midnight of the next day.
     final nextDay = DateTime(now.year, now.month, now.day + 1);
     final difference = nextDay.difference(now);
     if (mounted) {

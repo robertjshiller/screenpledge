@@ -1,3 +1,31 @@
+// File: android/app/src/main/kotlin/com/screenpledge/app/MainActivity.kt
+// -------------------------------------------------------------------------------------------------
+// ScreenPledge: Settings‑accurate screen‑time on Android
+//
+// This version implements a STRICT, Digital‑Wellbeing‑style parser for daily usage:
+//   • Build app‑active intervals from foreground events (RESUMED/PAUSED or MOVE_TO_*, API‑aware)
+//   • Build gating windows: SCREEN_INTERACTIVE/NON_INTERACTIVE  ∩  KEYGUARD_HIDDEN/SHOWN
+//   • Intersect ACTIVE with the gate, CLIP to local day bounds, MERGE, and SUM
+//   • Filter to LAUNCHABLE apps for device totals (avoid SystemUI inflating counts)
+//   • Conservative fallbacks to avoid 24h spikes on emulators/OEMs with missing gates:
+//       - If screen gate is MISSING for a day → return 0 for that day (strict & safe)
+//       - If unlock gate is MISSING → use SCREEN gate only (many OEMs omit keyguard events)
+//   • Hard‑cap per‑day total to 24h for additional safety
+//
+// Channel methods preserved:
+//   - requestPermission / isPermissionGranted
+//   - getInstalledApps / getUsageTopApps
+//   - getUsageForApps (sum of specific packages since midnight; per‑app totals, overlaps allowed)
+//   - getTotalDeviceUsage (strict, gated device total since midnight)
+//   - getWeeklyDeviceScreenTime (strict, 7 daily totals, local TZ)
+//   - getCountedDeviceUsage (goal‑aware today: total minus exemptions OR only tracked apps; strict)
+//   - getUsageForDateRange (legacy bucketed aggregates; events are preferred for charts)
+//
+// Notes:
+//   • This file is intentionally verbose and heavily commented for clarity and future maintenance.
+//   • All intervals are treated as half‑open [start, end).
+// -------------------------------------------------------------------------------------------------
+
 package com.screenpledge.app
 
 import android.app.AppOpsManager
@@ -233,20 +261,13 @@ class MainActivity : FlutterActivity() {
     /**
      * STRICT Settings‑style gating with **conservative fallbacks**.
      */
-    // ✅ ADDED: This function now contains detailed "pipeline" logging.
     private fun gateAndSumStrict(active: MutableList<Interval>, lo: Long, hi: Long): Long {
         Log.d(LOG_TAG, "--- gateAndSumStrict for day ${Date(lo)} ---")
-
-        // Step 1: Build the gating intervals
         val screen = buildToggleIntervals(SCREEN_ON, SCREEN_OFF, lo, hi)
         val unlocked = buildToggleIntervals(UNLOCKED, LOCKED, lo, hi)
-
-        // ✅ LOGGING: Log the raw totals for each component.
         Log.d(LOG_TAG, "  [Pipeline] Step 1: Raw Ungated App-Active Time = ${sum(active) / 1000}s (${active.size} intervals)")
         Log.d(LOG_TAG, "  [Pipeline] Step 2: Raw Screen-On Time         = ${sum(screen) / 1000}s (${screen.size} intervals)")
         Log.d(LOG_TAG, "  [Pipeline] Step 3: Raw Unlocked Time          = ${sum(unlocked) / 1000}s (${unlocked.size} intervals)")
-
-        // Step 2: Handle conservative fallbacks
         if (screen.isEmpty()) {
             Log.w(LOG_TAG, "  [Pipeline] FALLBACK: NO SCREEN events found. Returning 0 for this day.")
             return 0L
@@ -254,23 +275,16 @@ class MainActivity : FlutterActivity() {
         if (unlocked.isEmpty()) {
             Log.w(LOG_TAG, "  [Pipeline] FALLBACK: NO UNLOCK events found. Using SCREEN gate only.")
             unlocked.clear()
-            unlocked.add(Interval(lo, hi)) // Neutral interval
+            unlocked.add(Interval(lo, hi))
         }
-
-        // Step 3: Intersect the gates and the active time
         val gate = intersectMerged(screen, unlocked)
         val activeMerged = merge(active)
         val counted = intersectMerged(activeMerged, gate)
-
-        // ✅ LOGGING: Log the results of the intersections.
         Log.d(LOG_TAG, "  [Pipeline] Step 4: Combined Gate Time         = ${sum(gate) / 1000}s (${gate.size} intervals)")
         Log.d(LOG_TAG, "  [Pipeline] Step 5: Final Counted Time         = ${sum(counted) / 1000}s (${counted.size} intervals)")
-
         val total = sum(counted)
         val gateTotal = sum(gate)
         val finalResult = min(total, gateTotal)
-
-        // ✅ LOGGING: Log the final result before returning.
         Log.d(LOG_TAG, "  [Pipeline] Final Result (min of total and gate total): ${finalResult / 1000}s")
         Log.d(LOG_TAG, "--- End gateAndSumStrict ---")
         return finalResult
@@ -320,6 +334,49 @@ class MainActivity : FlutterActivity() {
         return RangeUsage(perApp, deviceTotal)
     }
 
+    // ✅ ADDED: A new function to get a detailed per-app usage breakdown for today.
+    // This uses the high-level `queryUsageStats` as it provides a simple, aggregated list for the day.
+    private fun getDailyUsageBreakdown(): List<Map<String, Any?>> {
+        val pm = packageManager
+        val launchablePackages = launchablePackages()
+        val usageStatsManager = getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
+        val (startTime, endTime) = todayRange()
+
+        val stats = usageStatsManager.queryUsageStats(UsageStatsManager.INTERVAL_DAILY, startTime, endTime)
+        val appList = mutableListOf<Map<String, Any?>>()
+
+        if (stats == null) {
+            Log.w(LOG_TAG, "getDailyUsageBreakdown: queryUsageStats returned null.")
+            return appList
+        }
+
+        // Filter and map the stats to the format Flutter expects.
+        for (usageStats in stats) {
+            if (usageStats.totalTimeInForeground <= 0) continue
+            if (launchablePackages.contains(usageStats.packageName)) {
+                try {
+                    val appInfo = pm.getApplicationInfo(usageStats.packageName, 0)
+                    val appName = appInfo.loadLabel(pm).toString()
+                    val icon = appInfo.loadIcon(pm)
+                    appList.add(mapOf(
+                        "name" to appName,
+                        "packageName" to usageStats.packageName,
+                        "icon" to drawableToBytes(icon),
+                        // We send the usage in milliseconds.
+                        "usageMillis" to usageStats.totalTimeInForeground
+                    ))
+                } catch (e: PackageManager.NameNotFoundException) {
+                    continue // Skip if app was uninstalled during the process.
+                }
+            }
+        }
+        
+        // Sort the list by usage time, descending.
+        appList.sortByDescending { it["usageMillis"] as Long }
+        Log.d(LOG_TAG, "getDailyUsageBreakdown: Returning ${appList.size} apps with usage.")
+        return appList
+    }
+
     // =============================================================================================
     // 🔌 MethodChannel wiring
     // =============================================================================================
@@ -365,6 +422,10 @@ class MainActivity : FlutterActivity() {
                             return@setMethodCallHandler
                         }
                         result.success(getUsageForDateRangeBucketed(start, end))
+                    }
+                    // ✅ ADDED: The new handler for the daily breakdown.
+                    "getDailyUsageBreakdown" -> {
+                        result.success(getDailyUsageBreakdown())
                     }
                     else -> result.notImplemented()
                 }
@@ -547,4 +608,4 @@ class MainActivity : FlutterActivity() {
         bmp.compress(Bitmap.CompressFormat.PNG, 100, stream)
         return stream.toByteArray()
     }
-}   
+}

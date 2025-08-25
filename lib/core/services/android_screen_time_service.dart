@@ -1,23 +1,14 @@
-import 'dart:typed_data';
+// lib/core/services/android_screen_time_service.dart
 
+import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:screenpledge/core/domain/entities/app_usage_stat.dart';
 import 'package:screenpledge/core/domain/entities/installed_app.dart';
 import 'package:screenpledge/core/services/screen_time_service.dart';
 
 /// Android implementation that talks to the Kotlin side via a single platform
 /// channel: `com.screenpledge.app/screentime`.
-///
-/// Channel methods implemented on the native side (MainActivity.kt):
-/// - requestPermission
-/// - isPermissionGranted
-/// - getInstalledApps
-/// - getUsageTopApps
-/// - getUsageForApps
-/// - getTotalDeviceUsage
-/// - getWeeklyDeviceScreenTime
-/// - getCountedDeviceUsage
-/// - getUsageForDateRange   (legacy / compatibility)
 class AndroidScreenTimeService implements ScreenTimeService {
   static const _channel = MethodChannel('com.screenpledge.app/screentime');
 
@@ -101,8 +92,7 @@ class AndroidScreenTimeService implements ScreenTimeService {
       final int millis = await _channel.invokeMethod<int>(
             'getUsageForApps',
             {'packageNames': packageNames},
-          ) ??
-          0;
+          ) ?? 0;
       return Duration(milliseconds: millis);
     } on PlatformException catch (e) {
       debugPrint("Failed to get usage for apps: '${e.message}'.");
@@ -113,8 +103,7 @@ class AndroidScreenTimeService implements ScreenTimeService {
   @override
   Future<Duration> getTotalDeviceUsage() async {
     try {
-      final int millis =
-          await _channel.invokeMethod<int>('getTotalDeviceUsage') ?? 0;
+      final int millis = await _channel.invokeMethod<int>('getTotalDeviceUsage') ?? 0;
       return Duration(milliseconds: millis);
     } on PlatformException catch (e) {
       debugPrint("Failed to get total device usage: '${e.message}'.");
@@ -136,8 +125,7 @@ class AndroidScreenTimeService implements ScreenTimeService {
               'trackedPackages': trackedPackages,
               'exemptPackages': exemptPackages,
             },
-          ) ??
-          0;
+          ) ?? 0;
       return Duration(milliseconds: millis);
     } on PlatformException catch (e) {
       debugPrint("Failed to get counted device usage: '${e.message}'.");
@@ -146,25 +134,20 @@ class AndroidScreenTimeService implements ScreenTimeService {
   }
 
   // ===========================================================================
-  // Historical
+  // Historical & Breakdown
   // ===========================================================================
 
   @override
   Future<Map<DateTime, Duration>> getWeeklyDeviceScreenTime() async {
     try {
-      final Map<dynamic, dynamic>? result =
-          await _channel.invokeMethod('getWeeklyDeviceScreenTime');
-
+      final Map<dynamic, dynamic>? result = await _channel.invokeMethod('getWeeklyDeviceScreenTime');
       if (result == null) return const {};
-
-      // Native returns keys as "yyyy-MM-dd" (local), values as millis.
       final parsed = <DateTime, Duration>{};
       for (final entry in result.entries) {
-        final keyStr = entry.key as String; // e.g., "2025-08-23"
+        final keyStr = entry.key as String;
         final valueMs = entry.value as int;
-        final day = DateTime.parse(keyStr); // local midnight date
-        parsed[DateTime(day.year, day.month, day.day)] =
-            Duration(milliseconds: valueMs);
+        final day = DateTime.parse(keyStr);
+        parsed[DateTime(day.year, day.month, day.day)] = Duration(milliseconds: valueMs);
       }
       return parsed;
     } on PlatformException catch (e) {
@@ -174,30 +157,51 @@ class AndroidScreenTimeService implements ScreenTimeService {
   }
 
   @override
-  Future<Map<DateTime, Duration>> getUsageForDateRange(
-      DateTime start, DateTime end) async {
+  Future<Map<DateTime, Duration>> getUsageForDateRange(DateTime start, DateTime end) async {
     try {
-      final Map<dynamic, dynamic>? result =
-          await _channel.invokeMethod('getUsageForDateRange', {
+      final Map<dynamic, dynamic>? result = await _channel.invokeMethod('getUsageForDateRange', {
         'startTime': start.millisecondsSinceEpoch,
         'endTime': end.millisecondsSinceEpoch,
       });
-
       if (result == null) return const {};
-
-      // Keys "yyyy-MM-dd" → DateTime(midnight local), value ms → Duration.
       final usageMap = <DateTime, Duration>{};
       for (final entry in result.entries) {
         final keyStr = entry.key as String;
         final valueMs = entry.value as int;
         final day = DateTime.parse(keyStr);
-        usageMap[DateTime(day.year, day.month, day.day)] =
-            Duration(milliseconds: valueMs);
+        usageMap[DateTime(day.year, day.month, day.day)] = Duration(milliseconds: valueMs);
       }
       return usageMap;
     } on PlatformException catch (e) {
       debugPrint("Failed to get usage for date range: '${e.message}'.");  
       return const {};
+    }
+  }
+
+  /// ✅ ADDED: Implementation for fetching the detailed daily breakdown.
+  @override
+  Future<List<AppUsageStat>> getDailyUsageBreakdown() async {
+    try {
+      final List<dynamic>? result = await _channel.invokeMethod('getDailyUsageBreakdown');
+      if (result == null) return [];
+
+      // Map the raw list of maps into our strongly-typed AppUsageStat entities.
+      return result.map((appMap) {
+        final map = Map<String, dynamic>.from(appMap);
+        return AppUsageStat(
+          // We create an InstalledApp object for the app's identity.
+          app: InstalledApp(
+            name: map['name'] ?? 'Unknown App',
+            packageName: map['packageName'] ?? '',
+            icon: map['icon'] as Uint8List,
+          ),
+          // And we store the usage duration.
+          usage: Duration(milliseconds: map['usageMillis'] ?? 0),
+        );
+      }).toList();
+    } on PlatformException catch (e) {
+      debugPrint("Failed to get daily usage breakdown: '${e.message}'.");
+      return [];
     }
   }
 }
