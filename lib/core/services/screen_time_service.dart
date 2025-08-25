@@ -1,31 +1,80 @@
-// lib/core/services/screen_time_service.dart
-
 import 'package:screenpledge/core/domain/entities/installed_app.dart';
 
-/// An abstract class defining the contract for a platform-specific screen time service.
-/// This contract defines the capabilities our app needs for interacting with native screen time APIs.
+/// Cross‑platform contract for screen‑time functionality.
+///
+/// IMPORTANT:
+/// - Keep this interface minimal and **deduplicated**. Every method listed here
+///   must have exactly one declaration (the build error you saw was caused by
+///   accidentally declaring `getUsageTopApps` twice).
+/// - Names map 1:1 to the platform channel methods used by the Android
+///   implementation so we can reason about them easily.
+///
+/// Terminology:
+/// - "Per‑app usage" (summing target packages; overlaps allowed) is different
+///   from "device total" (union of all foreground intervals gated by screen‑on
+///   + unlocked). Digital Wellbeing uses the latter when it shows total time.
+///
 abstract class ScreenTimeService {
-  /// Opens the system's Usage Access Settings screen for the user.
+  // ---------------------------------------------------------------------------
+  // Permission
+  // ---------------------------------------------------------------------------
+
+  /// Opens the system's Usage Access settings screen so the user can grant
+  /// `android.permission.PACKAGE_USAGE_STATS` on Android.
   Future<void> requestPermission();
 
-  /// Checks if the screen time permission has already been granted.
+  /// Returns true if usage access permission is currently granted.
   Future<bool> isPermissionGranted();
 
-  /// Fetches a list of all user-installed, launchable applications.
+  // ---------------------------------------------------------------------------
+  // App catalog helpers
+  // ---------------------------------------------------------------------------
+
+  /// All user‑launchable applications with icons (used for pickers / chips).
   Future<List<InstalledApp>> getInstalledApps();
 
-  /// Fetches a list of the most used apps based on screen time.
+  /// Top used apps list for UX (used to pre‑select in pickers).
   Future<List<InstalledApp>> getUsageTopApps();
 
-  /// Fetches the total combined usage time for a specific list of apps since midnight.
+  // ---------------------------------------------------------------------------
+  // Usage (today, since local midnight)
+  // ---------------------------------------------------------------------------
+
+  /// Sums the foreground time for the provided packages since **local midnight**.
+  /// This is an **overlap‑allowed** sum (i.e., split‑screen can double count),
+  /// which is fine for “select apps / groups” goal mode.
   Future<Duration> getUsageForApps(List<String> packageNames);
 
-  /// Fetches the total screen-on time for all apps on the device since midnight.
+  /// Today’s **device total** since local midnight, using the **Digital
+  /// Wellbeing semantics** (union of foreground intervals gated by:
+  /// screen‑interactive ∩ device‑unlocked).
   Future<Duration> getTotalDeviceUsage();
 
-  /// ✅ ADDED: Fetches historical usage data for a given date range.
+  /// Today’s **counted time** based on the goal type:
+  /// - `goalType = 'custom_group'` → union of included packages (gated).
+  /// - `goalType = 'total_time'`    → union of all packages except exempt (gated).
   ///
-  /// Returns a map where the key is the [DateTime] (normalized to midnight)
-  /// and the value is the total usage [Duration] for that day.
+  /// The native side expects these exact strings; we keep it stringly‑typed
+  /// at the boundary to avoid pulling UI enums into `core/services/`.
+  Future<Duration> getCountedDeviceUsage({
+    required String goalType,
+    List<String> trackedPackages,
+    List<String> exemptPackages,
+  });
+
+  // ---------------------------------------------------------------------------
+  // Historical
+  // ---------------------------------------------------------------------------
+
+  /// Seven day, **device total** bars (Digital Wellbeing style), keyed by
+  /// local‑midnight DateTime for each day.
+  ///
+  /// Returned map will contain 7 entries (Sun→Sat or rolling 7 days depending
+  /// on how you render it). Values are **gated union** totals.
+  Future<Map<DateTime, Duration>> getWeeklyDeviceScreenTime();
+
+  /// Legacy: bucketed per‑day totals using `queryUsageStats`. Kept for any
+  /// places still depending on it, but **prefer** `getWeeklyDeviceScreenTime`
+  /// for charts that must match Settings.
   Future<Map<DateTime, Duration>> getUsageForDateRange(DateTime start, DateTime end);
 }

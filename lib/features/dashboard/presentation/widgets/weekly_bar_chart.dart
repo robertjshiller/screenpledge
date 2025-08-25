@@ -5,13 +5,9 @@ import 'package:screenpledge/core/config/theme/app_colors.dart';
 import 'package:screenpledge/core/domain/entities/daily_result.dart';
 
 class WeeklyBarChart extends StatelessWidget {
-  /// The historical data for past days from the `daily_results` table.
   final List<DailyResult> dailyData;
-  /// The raw historical usage data from the device itself.
   final Map<DateTime, Duration> historicalUsage;
-  /// The live, real-time screen time usage for the current day.
   final Duration timeSpentToday;
-  /// The goal limit for the current day.
   final Duration timeLimitToday;
 
   const WeeklyBarChart({
@@ -40,13 +36,17 @@ class WeeklyBarChart extends StatelessWidget {
       for (var result in dailyData) DateTime(result.date.year, result.date.month, result.date.day): result
     };
 
-    // Find the maximum usage in the last 7 days to normalize bar heights.
-    // This ensures the chart is always scaled appropriately.
     final maxUsage = historicalUsage.values.fold(
       timeSpentToday,
       (max, current) => current > max ? current : max,
     );
-    final maxUsageMinutes = maxUsage.inMinutes > 0 ? maxUsage.inMinutes : 60.0; // Avoid division by zero
+    final maxUsageMinutes = maxUsage.inMinutes > 0 ? maxUsage.inMinutes : 60.0;
+    
+    // ✅ ADDED: Diagnostic Logging
+    debugPrint('--- [WeeklyBarChart] Build ---');
+    debugPrint('  - Max usage for scaling: $maxUsageMinutes minutes');
+    debugPrint('  - Historical Usage Map: $historicalUsage');
+    debugPrint('  - Daily Results List: ${dailyData.map((r) => '${r.date.toIso8601String()}: ${r.outcome}').toList()}');
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -70,16 +70,13 @@ class WeeklyBarChart extends StatelessWidget {
                 final isToday = dateOnly == todayDateOnly;
                 final historicalResult = resultsMap[dateOnly];
                 
-                // ✅ CHANGED: The source of truth for time is now the device data.
                 final timeUsed = isToday ? timeSpentToday : historicalUsage[dateOnly] ?? Duration.zero;
                 final timeLimit = isToday ? timeLimitToday : historicalResult?.timeLimit ?? Duration.zero;
 
                 Color barColor;
                 String tooltipMessage;
-
-                // --- Determine Bar Color ---
+                
                 if (historicalResult != null) {
-                  // If we have a recorded outcome, it's the source of truth for color.
                   switch (historicalResult.outcome) {
                     case DailyOutcome.success:
                       barColor = AppColors.buttonFill;
@@ -91,22 +88,16 @@ class WeeklyBarChart extends StatelessWidget {
                       barColor = AppColors.inactive;
                   }
                 } else {
-                  // For days with no recorded outcome (e.g., a new user's past),
-                  // the color is neutral/informational.
                   barColor = AppColors.inactive.withAlpha(100);
                 }
                 
-                // The "Today" bar's color is always live.
                 if (isToday) {
                   barColor = timeUsed > timeLimit ? Colors.red.shade400 : AppColors.buttonFill;
                 }
 
-                // --- Determine Bar Height ---
-                // The height is always relative to the max usage in the last 7 days.
                 final barHeight = (timeUsed.inMinutes / maxUsageMinutes * 120.0).clamp(5.0, 150.0);
 
-                // --- Determine Tooltip Message ---
-                final dayOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][day.weekday - 1];
+                final dayOfWeek = ['M', 'T', 'W', 'T', 'F', 'S', 'S'][day.weekday - 1];
                 if (timeLimit.inSeconds > 0) {
                   tooltipMessage = '${isToday ? 'Today' : dayOfWeek}\n'
                                    'Used: ${_formatDuration(timeUsed)}\n'
@@ -116,6 +107,9 @@ class WeeklyBarChart extends StatelessWidget {
                                    'Used: ${_formatDuration(timeUsed)}\n'
                                    'No Goal Set';
                 }
+
+                // ✅ ADDED: Diagnostic Logging for each bar.
+                debugPrint('  - Building bar for $dayOfWeek ($dateOnly): Height=$barHeight, TimeUsed=${timeUsed.inMinutes}m, Color=$barColor');
 
                 return Expanded(
                   child: Padding(

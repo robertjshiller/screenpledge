@@ -1,5 +1,3 @@
-// lib/features/dashboard/presentation/views/dashboard_page.dart
-
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:screenpledge/core/config/theme/app_colors.dart';
@@ -42,16 +40,12 @@ class DashboardPage extends ConsumerWidget {
           ),
         ),
         data: (dashboardState) {
-          // ✅ THIS IS THE CORE LOGIC CHANGE.
-          // We check if a goal exists and if it's effective right now.
+          // ✅ CORE CONDITIONAL: Active goal effective now? Show active dashboard.
           if (dashboardState.activeGoal != null && dashboardState.isGoalEffectiveNow) {
-            // If the goal is active and effective, show the progress dashboard.
             return _ActiveGoalDashboard(dashboardState: dashboardState);
           } else if (dashboardState.activeGoal != null && !dashboardState.isGoalEffectiveNow) {
-            // If a goal exists but is not yet effective, show the "Goal Pending" UI.
             return _GoalPendingDashboard(goal: dashboardState.activeGoal!);
           } else {
-            // If no goal exists at all, show a message prompting the user to create one.
             return const Center(
               child: Text(
                 'No active goal found.\nSet a new goal to get started!',
@@ -126,6 +120,8 @@ class _ActiveGoalDashboard extends StatelessWidget {
               const SizedBox(height: 8),
               Text('Time Used: ${_formatDuration(timeSpent)}', style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: 48),
+              // ✅ WeeklyBarChart now reads the Settings-accurate device-week (historicalUsage),
+              // plus your DailyResult list, as before.
               WeeklyBarChart(
                 dailyData: dashboardState.weeklyResults,
                 historicalUsage: dashboardState.historicalUsage,
@@ -140,9 +136,7 @@ class _ActiveGoalDashboard extends StatelessWidget {
   }
 }
 
-/// ✅ ADDED: A new private widget for the "Goal Pending" state.
-/// This UI is shown to a new user after they set their first goal, before it
-/// becomes effective at midnight.
+/// ✅ "Goal Pending" state shown before the goal becomes effective at midnight.
 class _GoalPendingDashboard extends StatefulWidget {
   final Goal goal;
   const _GoalPendingDashboard({required this.goal});
@@ -159,7 +153,7 @@ class _GoalPendingDashboardState extends State<_GoalPendingDashboard> {
   void initState() {
     super.initState();
     _calculateTimeUntilStart();
-    // Set up a timer to update the countdown every second.
+    // Update countdown every second.
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       _calculateTimeUntilStart();
     });
@@ -263,7 +257,6 @@ class _GoalPendingDashboardState extends State<_GoalPendingDashboard> {
   }
 }
 
-// A helper widget for the info box in the pending dashboard.
 class _InfoRow extends StatelessWidget {
   final IconData icon;
   final Color iconColor;

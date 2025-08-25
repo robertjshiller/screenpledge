@@ -1,5 +1,3 @@
-// lib/features/dashboard/presentation/viewmodels/dashboard_viewmodel.dart
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:screenpledge/core/di/daily_result_providers.dart';
@@ -27,8 +25,8 @@ class DashboardState {
   /// The list of recorded results from the last 7 days for the weekly chart.
   final List<DailyResult> weeklyResults;
 
-  /// ✅ ADDED: A map of raw historical usage data from the device.
-  /// This is used to power the "Device-First" bar chart for new users.
+  /// A map of raw historical usage data from the device (local-midnight days).
+  /// This now comes from our event-based engine and matches Android Settings.
   final Map<DateTime, Duration> historicalUsage;
 
   const DashboardState({
@@ -51,26 +49,26 @@ class DashboardState {
 
 /// The main provider for the dashboard.
 ///
-/// This is a [FutureProvider] that orchestrates fetching all the necessary data
-/// from different sources and combines them into a single [DashboardState] object.
+/// This orchestrates fetching all the necessary data from different sources
+/// and combines them into a single [DashboardState] object.
 final dashboardProvider = FutureProvider.autoDispose<DashboardState>((ref) async {
   debugPrint('--- [DashboardProvider] START ---');
   final screenTimeService = ref.read(screenTimeServiceProvider);
 
-  // --- Step 1: Fetch all data sources in parallel for performance ---
+  // Step 1: Fetch all data sources in parallel for performance
   debugPrint('[DashboardProvider] Step 1: Fetching all data sources in parallel...');
-  
+
   final now = DateTime.now();
   final sevenDaysAgo = now.subtract(const Duration(days: 6));
 
-  // Use Future.wait to run these independent fetches concurrently.
   final results = await Future.wait([
     ref.watch(activeGoalProvider.future),
     ref.read(getLast7DaysResultsUseCaseProvider)(),
-    screenTimeService.getUsageForDateRange(sevenDaysAgo, now),
+    // IMPORTANT: Use the event-based weekly map that matches Settings.
+    screenTimeService.getWeeklyDeviceScreenTime(),
   ]);
 
-  // --- Step 2: Process the fetched data ---
+  // Step 2: Process
   debugPrint('[DashboardProvider] Step 2: Processing fetched data...');
   final goal = results[0] as Goal?;
   final weeklyResults = results[1] as List<DailyResult>;
@@ -78,36 +76,38 @@ final dashboardProvider = FutureProvider.autoDispose<DashboardState>((ref) async
 
   debugPrint('  - Goal found: ${goal != null}');
   debugPrint('  - Historical results found: ${weeklyResults.length}');
-  debugPrint('  - Historical device usage days found: ${historicalUsage.length}');
+  debugPrint('  - Event-based device usage days found: ${historicalUsage.length}');
 
-  // --- Step 3: Determine if the goal is currently effective ---
+  // Step 3: Determine if the goal is currently effective
   bool isGoalEffectiveNow = false;
   if (goal != null) {
     isGoalEffectiveNow = goal.effectiveAt.isBefore(now);
   }
   debugPrint('[DashboardProvider] Step 3: Is goal effective now? $isGoalEffectiveNow');
 
-  // --- Step 4: Calculate today's live usage (only if the goal is effective) ---
+  // Step 4: Calculate today's live usage (goal-aware, event-based)
   Duration timeSpentToday = Duration.zero;
   if (goal != null && isGoalEffectiveNow) {
     debugPrint('[DashboardProvider] Step 4: Goal is effective. Calculating live usage for today...');
-    if (goal.goalType == GoalType.totalTime) {
-      final totalUsage = await screenTimeService.getTotalDeviceUsage();
-      final exemptPackageNames = goal.exemptApps.map((app) => app.packageName).toList();
-      final exemptUsage = await screenTimeService.getUsageForApps(exemptPackageNames);
-      timeSpentToday = totalUsage - exemptUsage;
-      if (timeSpentToday.isNegative) timeSpentToday = Duration.zero;
-      debugPrint('  - Total Time calculation: $totalUsage - $exemptUsage = $timeSpentToday');
-    } else {
-      final trackedPackageNames = goal.trackedApps.map((app) => app.packageName).toList();
-      timeSpentToday = await screenTimeService.getUsageForApps(trackedPackageNames);
-      debugPrint('  - Custom Group calculation: Time spent = $timeSpentToday');
-    }
+
+    // Map our domain goal types to native expectation.
+    final goalTypeString = goal.goalType == GoalType.totalTime ? 'total_time' : 'custom_group';
+    final trackedPackageNames = goal.trackedApps.map((a) => a.packageName).toList();
+    final exemptPackageNames = goal.exemptApps.map((a) => a.packageName).toList();
+
+    // Single call that does union + screen gating on native side.
+    timeSpentToday = await screenTimeService.getCountedDeviceUsage(
+      goalType: goalTypeString,
+      trackedPackages: trackedPackageNames,
+      exemptPackages: exemptPackageNames,
+    );
+
+    debugPrint('  - Counted device usage today: $timeSpentToday');
   } else {
     debugPrint('[DashboardProvider] Step 4: Goal is not effective yet. Skipping live usage fetch.');
   }
 
-  // --- Step 5: Construct and return the final state object ---
+  // Step 5: Construct and return the final state object
   final finalState = DashboardState(
     activeGoal: goal,
     isGoalEffectiveNow: isGoalEffectiveNow,

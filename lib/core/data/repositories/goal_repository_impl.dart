@@ -33,13 +33,12 @@ class GoalRepositoryImpl implements IGoalRepository {
         throw const AuthException('User is not authenticated.');
       }
 
-      // ✅ FIXED: This now uses the definitive, modern syntax for checking for a NULL value.
-      // The correct method is `.filter('column_name', 'is', null)`.
+      // The query remains the same, fetching all necessary columns.
       final data = await _supabaseClient
           .from('goals')
           .select('goal_type, time_limit_seconds, tracked_apps, exempt_apps, effective_at, ended_at')
           .eq('user_id', userId)
-          .filter('ended_at', 'is', null) // This is the correct syntax.
+          .filter('ended_at', 'is', null)
           .limit(1)
           .maybeSingle();
 
@@ -48,14 +47,38 @@ class GoalRepositoryImpl implements IGoalRepository {
         return null;
       }
 
-      // The Goal object is now constructed with the new, richer data.
+      // ✅ FIXED: Implemented the JSON deserialization for the app lists.
+      // We now correctly parse the `tracked_apps` and `exempt_apps` columns.
+      
+      // Helper function to safely parse a list of app JSON into a Set of InstalledApp objects.
+      Set<InstalledApp> _parseApps(dynamic json) {
+        // If the JSON is null or not a list, return an empty set.
+        if (json == null || json is! List) {
+          return {};
+        }
+        // Iterate through the list, safely creating an InstalledApp for each entry.
+        return json.map((appJson) {
+          // The icon data is not stored in the goal, so we use an empty list as a placeholder.
+          // The important data for the calculation is the package name.
+          return InstalledApp(
+            name: appJson['name'] ?? 'Unknown',
+            packageName: appJson['packageName'] ?? '',
+            icon: Uint8List(0), // Icon data is not needed for goal calculation.
+          );
+        }).toSet();
+      }
+
+      final Set<InstalledApp> trackedApps = _parseApps(data['tracked_apps']);
+      final Set<InstalledApp> exemptApps = _parseApps(data['exempt_apps']);
+
+      // The Goal object is now constructed with the real, deserialized app data.
       return Goal(
         goalType: data['goal_type'] == 'total_time'
             ? GoalType.totalTime
             : GoalType.customGroup,
         timeLimit: Duration(seconds: data['time_limit_seconds']),
-        trackedApps: <InstalledApp>{}, // Placeholder for now
-        exemptApps: <InstalledApp>{}, // Placeholder for now
+        trackedApps: trackedApps, // Now contains real data.
+        exemptApps: exemptApps,   // Now contains real data.
         effectiveAt: DateTime.parse(data['effective_at']),
         endedAt: data['ended_at'] != null ? DateTime.parse(data['ended_at']) : null,
       );

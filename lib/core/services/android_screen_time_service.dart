@@ -1,14 +1,29 @@
-// lib/core/services/android_screen_time_service.dart
-
 import 'dart:typed_data';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:screenpledge/core/domain/entities/installed_app.dart';
 import 'package:screenpledge/core/services/screen_time_service.dart';
 
-/// The concrete Android implementation of the [ScreenTimeService].
+/// Android implementation that talks to the Kotlin side via a single platform
+/// channel: `com.screenpledge.app/screentime`.
+///
+/// Channel methods implemented on the native side (MainActivity.kt):
+/// - requestPermission
+/// - isPermissionGranted
+/// - getInstalledApps
+/// - getUsageTopApps
+/// - getUsageForApps
+/// - getTotalDeviceUsage
+/// - getWeeklyDeviceScreenTime
+/// - getCountedDeviceUsage
+/// - getUsageForDateRange   (legacy / compatibility)
 class AndroidScreenTimeService implements ScreenTimeService {
   static const _channel = MethodChannel('com.screenpledge.app/screentime');
+
+  // ===========================================================================
+  // Permission
+  // ===========================================================================
 
   @override
   Future<void> requestPermission() async {
@@ -28,6 +43,10 @@ class AndroidScreenTimeService implements ScreenTimeService {
       return false;
     }
   }
+
+  // ===========================================================================
+  // App catalog helpers
+  // ===========================================================================
 
   @override
   Future<List<InstalledApp>> getInstalledApps() async {
@@ -71,15 +90,20 @@ class AndroidScreenTimeService implements ScreenTimeService {
     }
   }
 
+  // ===========================================================================
+  // Usage (today)
+  // ===========================================================================
+
   @override
   Future<Duration> getUsageForApps(List<String> packageNames) async {
     if (packageNames.isEmpty) return Duration.zero;
     try {
-      final int milliseconds = await _channel.invokeMethod<int>(
-        'getUsageForApps',
-        {'packageNames': packageNames},
-      ) ?? 0;
-      return Duration(milliseconds: milliseconds);
+      final int millis = await _channel.invokeMethod<int>(
+            'getUsageForApps',
+            {'packageNames': packageNames},
+          ) ??
+          0;
+      return Duration(milliseconds: millis);
     } on PlatformException catch (e) {
       debugPrint("Failed to get usage for apps: '${e.message}'.");
       return Duration.zero;
@@ -89,39 +113,91 @@ class AndroidScreenTimeService implements ScreenTimeService {
   @override
   Future<Duration> getTotalDeviceUsage() async {
     try {
-      final int milliseconds = await _channel.invokeMethod<int>('getTotalDeviceUsage') ?? 0;
-      return Duration(milliseconds: milliseconds);
+      final int millis =
+          await _channel.invokeMethod<int>('getTotalDeviceUsage') ?? 0;
+      return Duration(milliseconds: millis);
     } on PlatformException catch (e) {
       debugPrint("Failed to get total device usage: '${e.message}'.");
       return Duration.zero;
     }
   }
 
-  /// ✅ ADDED: Implementation for fetching historical usage data.
   @override
-  Future<Map<DateTime, Duration>> getUsageForDateRange(DateTime start, DateTime end) async {
+  Future<Duration> getCountedDeviceUsage({
+    required String goalType,
+    List<String> trackedPackages = const [],
+    List<String> exemptPackages = const [],
+  }) async {
     try {
-      debugPrint('[AndroidScreenTimeService] Invoking getUsageForDateRange from $start to $end');
-      // The native side returns a Map<String, int> (date string to milliseconds).
-      final Map<dynamic, dynamic>? result = await _channel.invokeMethod('getUsageForDateRange', {
+      final int millis = await _channel.invokeMethod<int>(
+            'getCountedDeviceUsage',
+            <String, dynamic>{
+              'goalType': goalType,
+              'trackedPackages': trackedPackages,
+              'exemptPackages': exemptPackages,
+            },
+          ) ??
+          0;
+      return Duration(milliseconds: millis);
+    } on PlatformException catch (e) {
+      debugPrint("Failed to get counted device usage: '${e.message}'.");
+      return Duration.zero;
+    }
+  }
+
+  // ===========================================================================
+  // Historical
+  // ===========================================================================
+
+  @override
+  Future<Map<DateTime, Duration>> getWeeklyDeviceScreenTime() async {
+    try {
+      final Map<dynamic, dynamic>? result =
+          await _channel.invokeMethod('getWeeklyDeviceScreenTime');
+
+      if (result == null) return const {};
+
+      // Native returns keys as "yyyy-MM-dd" (local), values as millis.
+      final parsed = <DateTime, Duration>{};
+      for (final entry in result.entries) {
+        final keyStr = entry.key as String; // e.g., "2025-08-23"
+        final valueMs = entry.value as int;
+        final day = DateTime.parse(keyStr); // local midnight date
+        parsed[DateTime(day.year, day.month, day.day)] =
+            Duration(milliseconds: valueMs);
+      }
+      return parsed;
+    } on PlatformException catch (e) {
+      debugPrint("Failed to get weekly device screen time: '${e.message}'.");
+      return const {};
+    }
+  }
+
+  @override
+  Future<Map<DateTime, Duration>> getUsageForDateRange(
+      DateTime start, DateTime end) async {
+    try {
+      final Map<dynamic, dynamic>? result =
+          await _channel.invokeMethod('getUsageForDateRange', {
         'startTime': start.millisecondsSinceEpoch,
         'endTime': end.millisecondsSinceEpoch,
       });
 
-      if (result == null) return {};
+      if (result == null) return const {};
 
-      // We parse the raw map from the native side into our strongly-typed Dart map.
-      final usageMap = result.map((key, value) {
-        return MapEntry(
-          DateTime.parse(key as String),
-          Duration(milliseconds: value as int),
-        );
-      });
-      debugPrint('[AndroidScreenTimeService] Received ${usageMap.length} days of historical data.');
+      // Keys "yyyy-MM-dd" → DateTime(midnight local), value ms → Duration.
+      final usageMap = <DateTime, Duration>{};
+      for (final entry in result.entries) {
+        final keyStr = entry.key as String;
+        final valueMs = entry.value as int;
+        final day = DateTime.parse(keyStr);
+        usageMap[DateTime(day.year, day.month, day.day)] =
+            Duration(milliseconds: valueMs);
+      }
       return usageMap;
     } on PlatformException catch (e) {
-      debugPrint("Failed to get usage for date range: '${e.message}'.");
-      return {}; // Return an empty map on failure.
+      debugPrint("Failed to get usage for date range: '${e.message}'.");  
+      return const {};
     }
   }
 }

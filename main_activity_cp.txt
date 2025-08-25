@@ -156,6 +156,19 @@ class MainActivity : FlutterActivity() {
         return set
     }
 
+    // ✅ ADDED: A new helper function to get the package name of the default home screen launcher.
+    // This is the key to filtering out home screen usage.
+    private fun getDefaultLauncherPackage(): String? {
+        val intent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
+        val resolveInfo = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            packageManager.resolveActivity(intent, PackageManager.ResolveInfoFlags.of(PackageManager.MATCH_DEFAULT_ONLY.toLong()))
+        } else {
+            @Suppress("DEPRECATION")
+            packageManager.resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY)
+        }
+        return resolveInfo?.activityInfo?.packageName
+    }
+
     // =============================================================================================
     // 🧩 Core parser: build intervals from events, gate, clip, merge, sum
     // =============================================================================================
@@ -233,20 +246,13 @@ class MainActivity : FlutterActivity() {
     /**
      * STRICT Settings‑style gating with **conservative fallbacks**.
      */
-    // ✅ ADDED: This function now contains detailed "pipeline" logging.
     private fun gateAndSumStrict(active: MutableList<Interval>, lo: Long, hi: Long): Long {
         Log.d(LOG_TAG, "--- gateAndSumStrict for day ${Date(lo)} ---")
-
-        // Step 1: Build the gating intervals
         val screen = buildToggleIntervals(SCREEN_ON, SCREEN_OFF, lo, hi)
         val unlocked = buildToggleIntervals(UNLOCKED, LOCKED, lo, hi)
-
-        // ✅ LOGGING: Log the raw totals for each component.
         Log.d(LOG_TAG, "  [Pipeline] Step 1: Raw Ungated App-Active Time = ${sum(active) / 1000}s (${active.size} intervals)")
         Log.d(LOG_TAG, "  [Pipeline] Step 2: Raw Screen-On Time         = ${sum(screen) / 1000}s (${screen.size} intervals)")
         Log.d(LOG_TAG, "  [Pipeline] Step 3: Raw Unlocked Time          = ${sum(unlocked) / 1000}s (${unlocked.size} intervals)")
-
-        // Step 2: Handle conservative fallbacks
         if (screen.isEmpty()) {
             Log.w(LOG_TAG, "  [Pipeline] FALLBACK: NO SCREEN events found. Returning 0 for this day.")
             return 0L
@@ -254,23 +260,16 @@ class MainActivity : FlutterActivity() {
         if (unlocked.isEmpty()) {
             Log.w(LOG_TAG, "  [Pipeline] FALLBACK: NO UNLOCK events found. Using SCREEN gate only.")
             unlocked.clear()
-            unlocked.add(Interval(lo, hi)) // Neutral interval
+            unlocked.add(Interval(lo, hi))
         }
-
-        // Step 3: Intersect the gates and the active time
         val gate = intersectMerged(screen, unlocked)
         val activeMerged = merge(active)
         val counted = intersectMerged(activeMerged, gate)
-
-        // ✅ LOGGING: Log the results of the intersections.
         Log.d(LOG_TAG, "  [Pipeline] Step 4: Combined Gate Time         = ${sum(gate) / 1000}s (${gate.size} intervals)")
         Log.d(LOG_TAG, "  [Pipeline] Step 5: Final Counted Time         = ${sum(counted) / 1000}s (${counted.size} intervals)")
-
         val total = sum(counted)
         val gateTotal = sum(gate)
         val finalResult = min(total, gateTotal)
-
-        // ✅ LOGGING: Log the final result before returning.
         Log.d(LOG_TAG, "  [Pipeline] Final Result (min of total and gate total): ${finalResult / 1000}s")
         Log.d(LOG_TAG, "--- End gateAndSumStrict ---")
         return finalResult
@@ -285,20 +284,31 @@ class MainActivity : FlutterActivity() {
 
     private fun buildRangeUsage(lo: Long, hi: Long): RangeUsage {
         val launchable = launchablePackages()
-        val activeIntervals = buildAppActiveIntervals(lo, hi) { pkg -> launchable.contains(pkg) }
+        // ✅ FIXED: We now identify and exclude the default launcher from our calculations.
+        val launcherPackage = getDefaultLauncherPackage()
+        if (launcherPackage != null) {
+            Log.d(LOG_TAG, "Identified default launcher: $launcherPackage. It will be excluded from totals.")
+        }
+
+        // App‑active intervals are now restricted to launchable packages that are NOT the launcher.
+        val activeIntervals = buildAppActiveIntervals(lo, hi) { pkg ->
+            launchable.contains(pkg) && pkg != launcherPackage
+        }
+
         val deviceTotal = gateAndSumStrict(activeIntervals, lo, hi)
+
         val perApp = HashMap<String, Long>().apply {
             val (RESUMED, PAUSED) = resumePauseTypes()
             val evs = queryEvents(lo, hi)
             val e = UsageEvents.Event()
             val open = HashMap<String, Long>()
             fun open(pkg: String, t: Long) {
-                if (!launchable.contains(pkg)) return
+                if (!launchable.contains(pkg) || pkg == launcherPackage) return
                 if (!containsKey(pkg)) put(pkg, 0L)
                 if (!open.containsKey(pkg)) open[pkg] = t
             }
             fun close(pkg: String, t: Long) {
-                if (!launchable.contains(pkg)) return
+                if (!launchable.contains(pkg) || pkg == launcherPackage) return
                 val st = open.remove(pkg) ?: return
                 val s = max(st, lo); val end = min(t, hi)
                 if (end > s) this[pkg] = (this[pkg] ?: 0L) + (end - s)
@@ -312,11 +322,12 @@ class MainActivity : FlutterActivity() {
                 }
             }
             for ((pkg, st) in open) {
-                if (!launchable.contains(pkg)) continue
+                if (!launchable.contains(pkg) || pkg == launcherPackage) continue
                 val s = max(st, lo)
                 if (hi > s) this[pkg] = (this[pkg] ?: 0L) + (hi - s)
             }
         }
+
         return RangeUsage(perApp, deviceTotal)
     }
 
@@ -379,7 +390,6 @@ class MainActivity : FlutterActivity() {
     // 📅 Weekly (strict) and Today (strict)
     // =============================================================================================
 
-    /** Last 7 days, strict, hard‑capped to 24h each. Keys: yyyy‑MM‑dd (local). */
     private fun getWeeklyDeviceScreenTime(): Map<String, Long> {
         val out = LinkedHashMap<String, Long>(7)
         val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.US).apply { timeZone = TimeZone.getDefault() }
@@ -393,7 +403,6 @@ class MainActivity : FlutterActivity() {
         return out
     }
 
-    /** Today’s strict device total (since local midnight). */
     private fun getTotalDeviceUsage(): Long {
         val (lo, hi) = todayRange()
         val total = buildRangeUsage(lo, hi).deviceTotal
@@ -401,23 +410,23 @@ class MainActivity : FlutterActivity() {
         return total
     }
 
-    /**
-     * Goal‑aware counted time today (00:00→now), **strict** gating.
-     */
     private fun getCountedDeviceUsage(goalType: String, tracked: List<String>, exempt: List<String>): Long {
         val (lo, hi) = todayRange()
         val launchable = launchablePackages().toSet()
+        val launcherPackage = getDefaultLauncherPackage()
+
         val active = when (goalType.lowercase(Locale.US)) {
             "custom_group" -> buildAppActiveIntervals(lo, hi) { pkg ->
-                launchable.contains(pkg) && tracked.contains(pkg)
+                launchable.contains(pkg) && tracked.contains(pkg) && pkg != launcherPackage
             }
             "total_time" -> buildAppActiveIntervals(lo, hi) { pkg ->
-                launchable.contains(pkg) && !exempt.contains(pkg)
+                launchable.contains(pkg) && !exempt.contains(pkg) && pkg != launcherPackage
             }
             else -> buildAppActiveIntervals(lo, hi) { pkg ->
-                launchable.contains(pkg)
+                launchable.contains(pkg) && pkg != launcherPackage
             }
         }
+
         val counted = gateAndSumStrict(active, lo, hi)
         Log.d(LOG_TAG, "getCountedDeviceUsage type=$goalType -> ${counted}ms")
         return counted
@@ -547,4 +556,4 @@ class MainActivity : FlutterActivity() {
         bmp.compress(Bitmap.CompressFormat.PNG, 100, stream)
         return stream.toByteArray()
     }
-}   
+}
