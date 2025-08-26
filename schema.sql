@@ -1,19 +1,14 @@
--- ScreenPledge Database Schema v1.2
+-- ScreenPledge Database Schema v1.3
 -- Author: Gemini AI
--- Date: August 22, 2025
+-- Date: August 23, 2025
 
 -- =================================================================
 -- SECTION 1: ENUM TYPE DEFINITIONS
 -- =================================================================
 
--- Renamed from accountability_status for consistency with the product's core terminology.
 CREATE TYPE public.pledge_status AS ENUM ('inactive', 'active', 'paused');
-
 CREATE TYPE public.goal_type AS ENUM ('total_time', 'custom_group');
-
--- Added 'paused' to support the feature of pausing a goal without deactivating it entirely.
 CREATE TYPE public.goal_status AS ENUM ('active', 'inactive', 'paused');
-
 CREATE TYPE public.daily_outcome AS ENUM ('success', 'failure', 'paused', 'forgiven', 'pending_reconciliation');
 CREATE TYPE public.reward_type AS ENUM ('gift_card', 'discount', 'free_trial', 'donation', 'subscription', 'theme');
 CREATE TYPE public.reward_tier AS ENUM ('bronze', 'silver', 'gold', 'platinum');
@@ -55,18 +50,12 @@ CREATE TABLE public.goals (
   time_limit_seconds integer NOT NULL,
   tracked_apps jsonb,
   exempt_apps jsonb,
-  -- ✅ ADDED: The timestamp when this goal becomes active.
   effective_at timestamp with time zone NOT NULL DEFAULT now(),
-  -- ✅ ADDED: The timestamp when this goal is superseded by a new one. NULL for the currently active goal.
   ended_at timestamp with time zone,
   created_at timestamp with time zone NOT NULL DEFAULT now(),
   updated_at timestamp with time zone NOT NULL DEFAULT now()
 );
 COMMENT ON TABLE public.goals IS 'An immutable log of user-defined goals. Active goal is the one where ended_at is NULL.';
-COMMENT ON COLUMN public.goals.user_id IS 'References the public profile, not the private auth user.';
-COMMENT ON COLUMN public.goals.effective_at IS 'The date and time this goal''s rules begin to apply.';
-COMMENT ON COLUMN public.goals.ended_at IS 'The date and time this goal was replaced by a new one.';
-
 
 -- Table: daily_results
 CREATE TABLE public.daily_results (
@@ -76,17 +65,12 @@ CREATE TABLE public.daily_results (
   outcome public.daily_outcome NOT NULL,
   pp_earned integer NOT NULL DEFAULT 0,
   pledge_charged_cents integer NOT NULL DEFAULT 0,
-  -- ✅ ADDED: A snapshot of the user's screen time for this day, for historical accuracy.
   time_spent_seconds integer,
-  -- ✅ ADDED: A snapshot of the user's goal limit for this day, for historical accuracy.
   time_limit_seconds integer,
   acknowledged_at timestamp with time zone,
   created_at timestamp with time zone NOT NULL DEFAULT now()
 );
 COMMENT ON TABLE public.daily_results IS 'Immutable log of daily user outcomes.';
-COMMENT ON COLUMN public.daily_results.time_spent_seconds IS 'Snapshot of the final calculated screen time for this day.';
-COMMENT ON COLUMN public.daily_results.time_limit_seconds IS 'Snapshot of the goal''s time limit that was active for this day.';
-
 
 ALTER TABLE public.daily_results ADD CONSTRAINT unique_user_date UNIQUE (user_id, date);
 
@@ -130,16 +114,21 @@ ALTER TABLE public.daily_results ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.user_surveys ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.rewards ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Users can view their own profile." ON public.profiles FOR SELECT USING (auth.uid() = id);
-CREATE POLICY "Users can update their own profile." ON public.profiles FOR UPDATE USING (auth.uid() = id);
-CREATE POLICY "Users can view their own goals." ON public.goals FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "Users can create their own goals." ON public.goals FOR INSERT WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "Users can update their own goals." ON public.goals FOR UPDATE USING (auth.uid() = user_id);
-CREATE POLICY "Users can view their own daily results." ON public.daily_results FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "Users can update acknowledged_at." ON public.daily_results FOR UPDATE USING (auth.uid() = user_id);
-CREATE POLICY "Users can view their own survey responses." ON public.user_surveys FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "Users can create their own survey response once." ON public.user_surveys FOR INSERT WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "All authenticated users can view active rewards." ON public.rewards FOR SELECT USING (is_active = true AND auth.role() = 'authenticated');
+-- Policies for 'profiles'
+CREATE POLICY "Users can manage their own profile" ON public.profiles FOR ALL TO authenticated USING (auth.uid() = id) WITH CHECK (auth.uid() = id);
+
+-- Policies for 'goals'
+CREATE POLICY "Users can manage their own goals" ON public.goals FOR ALL TO authenticated USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+
+-- Policies for 'daily_results'
+CREATE POLICY "Users can view their own daily results." ON public.daily_results FOR SELECT TO authenticated USING (auth.uid() = user_id);
+CREATE POLICY "Users can update acknowledged_at." ON public.daily_results FOR UPDATE TO authenticated USING (auth.uid() = user_id);
+
+-- Policies for 'user_surveys'
+CREATE POLICY "Users can manage their own survey" ON public.user_surveys FOR ALL TO authenticated USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+
+-- Policies for 'rewards'
+CREATE POLICY "All authenticated users can view active rewards." ON public.rewards FOR SELECT TO authenticated USING (is_active = true);
 
 -- =================================================================
 -- SECTION 4: DATABASE FUNCTIONS & TRIGGERS
@@ -172,74 +161,35 @@ CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
--- This function creates a new user survey and marks the survey checkpoint as complete in a single transaction.
+-- RPCs for atomic operations
 CREATE OR REPLACE FUNCTION public.submit_user_survey(survey_data jsonb)
 RETURNS void AS $$
 BEGIN
   INSERT INTO public.user_surveys (user_id, age_range, occupation, primary_purpose, attribution_source)
-  VALUES (
-    auth.uid(),
-    survey_data->>'age_range',
-    survey_data->>'occupation',
-    survey_data->>'primary_purpose',
-    survey_data->>'attribution_source'
-  );
-  UPDATE public.profiles
-  SET onboarding_completed_survey = TRUE
-  WHERE id = auth.uid();
+  VALUES (auth.uid(), survey_data->>'age_range', survey_data->>'occupation', survey_data->>'primary_purpose', survey_data->>'attribution_source');
+  UPDATE public.profiles SET onboarding_completed_survey = TRUE WHERE id = auth.uid();
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql;
 
--- This function saves the user's draft goal from onboarding and marks the
--- goal setup checkpoint as complete in a single, atomic transaction.
 CREATE OR REPLACE FUNCTION public.save_onboarding_goal_draft(draft_goal_data jsonb)
 RETURNS void AS $$
 BEGIN
-  UPDATE public.profiles
-  SET
-    onboarding_draft_goal = draft_goal_data,
-    onboarding_completed_goal_setup = TRUE
-  WHERE
-    id = auth.uid();
+  UPDATE public.profiles SET onboarding_draft_goal = draft_goal_data, onboarding_completed_goal_setup = TRUE WHERE id = auth.uid();
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql;
 
--- This function finalizes the onboarding process. It takes the draft goal from the
--- user's profile, creates an official goal record, optionally sets the pledge,
--- and marks all onboarding steps as complete in a single atomic transaction.
 CREATE OR REPLACE FUNCTION public.commit_onboarding_goal(pledge_amount_cents_input integer DEFAULT 0)
 RETURNS void AS $$
 DECLARE
   draft_goal_data jsonb;
 BEGIN
-  SELECT onboarding_draft_goal INTO draft_goal_data
-  FROM public.profiles
-  WHERE id = auth.uid();
-
-  IF draft_goal_data IS NULL THEN
-    RAISE EXCEPTION 'User does not have a draft goal to commit.';
-  END IF;
-
+  SELECT onboarding_draft_goal INTO draft_goal_data FROM public.profiles WHERE id = auth.uid();
+  IF draft_goal_data IS NULL THEN RAISE EXCEPTION 'User does not have a draft goal to commit.'; END IF;
   INSERT INTO public.goals (user_id, status, goal_type, time_limit_seconds, tracked_apps, exempt_apps)
-  VALUES (
-    auth.uid(),
-    'active',
-    (draft_goal_data->>'goalType')::public.goal_type,
-    (draft_goal_data->>'timeLimit')::integer,
-    (draft_goal_data->>'trackedApps')::jsonb,
-    (draft_goal_data->>'exemptApps')::jsonb
-  );
-
-  UPDATE public.profiles
-  SET
-    pledge_status = CASE WHEN pledge_amount_cents_input > 0 THEN 'active'::public.pledge_status ELSE 'inactive'::public.pledge_status END,
-    pledge_amount_cents = pledge_amount_cents_input,
-    onboarding_completed_pledge_setup = TRUE,
-    onboarding_draft_goal = NULL
-  WHERE
-    id = auth.uid();
+  VALUES (auth.uid(), 'active', (draft_goal_data->>'goalType')::public.goal_type, (draft_goal_data->>'timeLimit')::integer, (draft_goal_data->>'trackedApps')::jsonb, (draft_goal_data->>'exemptApps')::jsonb);
+  UPDATE public.profiles SET pledge_status = CASE WHEN pledge_amount_cents_input > 0 THEN 'active'::public.pledge_status ELSE 'inactive'::public.pledge_status END, pledge_amount_cents = pledge_amount_cents_input, onboarding_completed_pledge_setup = TRUE, onboarding_draft_goal = NULL WHERE id = auth.uid();
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql;
 
 -- =================================================================
 -- SECTION 5: TABLE-LEVEL PRIVILEGES (GRANTS)
@@ -249,7 +199,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 GRANT USAGE ON SCHEMA public TO authenticated;
 
 -- Grant permissions for the 'profiles' table.
-GRANT SELECT, UPDATE, INSERT, DELETE ON TABLE public.profiles TO authenticated;
+GRANT SELECT, UPDATE ON TABLE public.profiles TO authenticated;
 
 -- Grant permissions for the 'user_surveys' table.
 GRANT SELECT, INSERT ON TABLE public.user_surveys TO authenticated;
@@ -259,3 +209,6 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.goals TO authenticated;
 
 -- Grant permissions for the 'rewards' table.
 GRANT SELECT ON TABLE public.rewards TO authenticated;
+
+-- Grant permissions for the 'daily_results' table.
+GRANT SELECT, UPDATE ON TABLE public.daily_results TO authenticated;

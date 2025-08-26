@@ -1,9 +1,12 @@
-### **The Complete Master Development Document (v1.5)**
+
+### **1. The Complete Master Development Document (v1.6)**
+
+This is the full, unabridged version, updated to reflect our final decisions on the dashboard, native code, and database architecture.
 
 # **ScreenPledge: The Definitive Master Development Document**
 
-**Version:** 1.5
-**Date:** August 22, 2025
+**Version:** 1.6
+**Date:** August 23, 2025
 **Project:** ScreenPledge – MVP
 
 ---
@@ -53,8 +56,8 @@ The user journey is split into two distinct phases.
 *Goal: Convert an anonymous visitor into a trialist.*
 
 -   **Get Started Page:** "Get Started" and "Log In" options.
--   **Permission Page:** Requests Screen Time access using a "fire and re-check" strategy.
--   **Data Reveal Sequence:** A multi-step sequence revealing screen time impact.
+-   **Permission Page:** Requests Screen Time access using the robust **Activity Result API** on Android for a seamless return to the app.
+-   **Data Reveal Sequence:** A multi-step, narrative sequence. It fetches the user's average daily screen time from the last 7 days, calculates their projected      yearly and lifetime usage, and presents this data in an impactful, motivational way. 
 -   **Solution Page:** Explains the core concept of money-backed motivation.
 -   **How It Works Sequence:** 3-card carousel of the core app loop (Pledge, Accountability, Rewards).
 -   **Subscription Primer Page:** A text-based page priming the user for the subscription.
@@ -76,11 +79,20 @@ The user journey is split into two distinct phases.
 
 #### **2.3.1 Dashboard (`dashboard` feature)**
 
--   A unified dashboard displaying the user's active goal progress via a `ProgressRing` and a `WeeklyBarChart`. The view handles states for when a goal is active or not found.
+-   A unified dashboard displaying the user's active goal progress via a `ProgressRing` and a `WeeklyBarChart`. The view handles three distinct states:
+    1.  **Goal Pending:** A celebratory UI shown to new users before their first goal becomes effective at midnight.
+    2.  **Active Goal:** The main dashboard with the progress ring, charts, and a detailed per-app usage breakdown.
+    3.  **No Goal:** A message prompting the user to set a goal.
+-   The `WeeklyBarChart` uses a "Device-First" approach, populating historical bars with data from the native Screen Time API to provide instant value to new users.
+Includes a detailed, scrollable list of the user's per-app usage for the current day.
+
 
 #### **2.3.2 Rewards Marketplace (`rewards` feature)**
 
--   (Future) A unified, filterable marketplace for redeeming Pledge Points.
+A unified, filterable marketplace where users can spend their earned Pledge Points (PP).
+**Pledge Tiers**: A progress bar shows the user's lifetime PP and their progress towards the next tier (Bronze, Silver, Gold, Platinum). Higher tiers unlock exclusive, high-value rewards.
+**Featured Section**: A carousel at the top highlights high-priority rewards, such as redeeming points for a free month of subscription or special partner offers.
+**Main Grid**: All other available rewards (e.g., gift cards, charity donations), showing their PP cost and status ("Locked" for tier-gated rewards, "Sold Out" for limited inventory items).
 
 #### **2.3.3 Settings (`settings` feature)**
 
@@ -119,6 +131,10 @@ The system is designed to be resilient and atomic, primarily through the use of 
 -   **Atomic Transactions:** All multi-step database operations (like submitting the survey and updating the profile flag) are wrapped in single PostgreSQL Functions (RPCs) to ensure they either fully succeed or fully fail, preventing the user's state from becoming inconsistent.
 -   **Superseding Goals:** When a user edits an active goal from Settings, a new goal record is created with a future `effective_at` timestamp, and the old goal's `ended_at` is set. This provides a complete, immutable history of all goals.
 
+### **3.5 Notifications & Real-time Feedback**
+**Proactive Notifications**: The app must provide real-time feedback to the user regarding their progress. This includes sending local notifications at key thresholds (e.g., "You've used 75% of your daily limit," "15 minutes remaining," "You've exceeded your limit for today").
+**Permission Revocation Alert**: If the app detects that Screen Time permission has been revoked, it must immediately send a notification to the user, prompting them to re-enable it to maintain their pledge.
+
 ---
 
 ## **4. Technical Architecture & Stack**
@@ -142,7 +158,7 @@ The system is designed to be resilient and atomic, primarily through the use of 
 ### **4.4. Platform-Specific Code (iOS vs. Android)**
 
 -   **Abstraction Layer:** Pure Dart `ScreenTimeService` defined in `core/services`.
--   **Native Implementation (Android):** Kotlin using `MethodChannel` to access `PackageManager.queryIntentActivities` and `UsageStatsManager`.
+-   **Native Implementation (Android):** A sophisticated Kotlin parser in `MainActivity.kt` that uses `UsageEvents` to build a settings-accurate, timezone-aware, and de-duplicated measure of screen time. It uses a `MethodChannel` for communication.
 -   **Native Implementation (iOS):** (Future) Swift using the `FamilyControls` framework and `DeviceActivity`.
 
 ### **4.5 The Auth Gate & Session Management**
@@ -174,7 +190,7 @@ Dependencies must only point **inwards** from Presentation -> Domain -> Data.
 
 1.  **Create the Repository Contract:** Add the new method to the `IProfileRepository` interface.
 
-    *File: `.../domain/repositories/profile_repository.dart`*
+    *File: `lib/core/domain/repositories/profile_repository.dart`*
     ```dart
     abstract class IProfileRepository {
       // ... other methods
@@ -184,7 +200,7 @@ Dependencies must only point **inwards** from Presentation -> Domain -> Data.
 
 2.  **Create the Use Case:** Create the `SaveGoalAndContinueUseCase`. It will depend on the repository contract.
 
-    *File: `.../domain/usecases/save_goal_and_continue.dart`*
+    *File: `lib/core/domain/usecases/save_goal_and_continue.dart`*
     ```dart
     class SaveGoalAndContinueUseCase {
       final IProfileRepository _repository;
@@ -205,7 +221,7 @@ Dependencies must only point **inwards** from Presentation -> Domain -> Data.
 
 3.  **Create the RPC:** Write the `save_onboarding_goal_draft` PostgreSQL Function in the Supabase SQL Editor. This function contains the actual business logic.
 
-    *File: `supabase/migrations/..._create_rpc.sql`*
+    *File: `supabase/migrations/YYYYMMDDHHMMSS_create_save_draft_rpc.sql`*
     ```sql
     CREATE OR REPLACE FUNCTION public.save_onboarding_goal_draft(draft_goal_data jsonb)
     RETURNS void AS $$
@@ -221,7 +237,7 @@ Dependencies must only point **inwards** from Presentation -> Domain -> Data.
 
 4.  **Implement the Repository Method:** The `ProfileRepositoryImpl` implements the contract by calling the RPC.
 
-    *File: `.../data/repositories/profile_repository_impl.dart`*
+    *File: `lib/core/data/repositories/profile_repository_impl.dart`*
     ```dart
     class ProfileRepositoryImpl implements IProfileRepository {
       // ...
@@ -243,7 +259,7 @@ Dependencies must only point **inwards** from Presentation -> Domain -> Data.
 
 5.  **Create the Riverpod Provider:** Add the provider for the new use case.
 
-    *File: `.../di/profile_providers.dart`*
+    *File: `lib/core/di/profile_providers.dart`*
     ```dart
     final saveGoalAndContinueUseCaseProvider = Provider((ref) {
       return SaveGoalAndContinueUseCase(ref.watch(profileRepositoryProvider));
@@ -258,7 +274,7 @@ Dependencies must only point **inwards** from Presentation -> Domain -> Data.
 
 6.  **Create/Update the ViewModel:** The `GoalSettingViewModel` depends on and calls the use case.
 
-    *File: `.../presentation/viewmodels/goal_setting_viewmodel.dart`*
+    *File: `lib/features/onboarding_post/presentation/viewmodels/goal_setting_viewmodel.dart`*
     ```dart
     class GoalSettingViewModel extends StateNotifier<AsyncValue<void>> {
       final SaveGoalAndContinueUseCase _useCase;
@@ -273,7 +289,7 @@ Dependencies must only point **inwards** from Presentation -> Domain -> Data.
 
 7.  **Create/Update the View:** The `GoalSettingPage` watches the ViewModel and calls its methods.
 
-    *File: `.../presentation/views/goal_setting_page.dart`*
+    *File: `lib/features/onboarding_post/presentation/views/goal_setting_page.dart`*
     ```dart
     // The "Save & Continue" button's onPressed callback:
     onPressed: () {
@@ -283,9 +299,9 @@ Dependencies must only point **inwards** from Presentation -> Domain -> Data.
 
 ---
 
-## **6. Database Schema (v1.1)**
+## **6. Database Schema (v1.3)**
 
-The full, definitive `schema.sql` file, including all tables, enums, RLS policies, triggers, and RPCs, is maintained as a separate `schema.sql` document. The version described in this Master Document corresponds to version 1.1 of that file.
+The full, definitive `schema.sql` file, including all tables, enums, RLS policies, triggers, and RPCs, is maintained as a separate `schema.sql` document. The version described in this Master Document corresponds to version 1.3 of that file, which includes all necessary columns, secure RLS policies applied to the `authenticated` role, and all necessary `GRANT` statements.
 
 ---
 
@@ -301,3 +317,157 @@ The full, definitive `schema.sql` file, including all tables, enums, RLS policie
 -   **`lib/features/`**: Contains modular, vertical slices of the app.
     -   **`auth/`**: Contains the `AuthGate` view, which acts as the app's main router.
     -   **`onboarding_pre/`**, **`onboarding_post/`**, **`dashboard/`**, etc. Each feature contains its own `data`, `domain`, and `presentation` layers.
+
+
+**Directory Full**
+
+lib/
+├── core/
+│   ├── common_widgets/
+│   │   ├── bottom_nav_bar.dart
+│   │   └── primary_button.dart
+│   ├── config/
+│   │   ├── router/
+│   │   │   └── app_router.dart
+│   │   └── theme/
+│   │       ├── app_colors.dart
+│   │       └── app_theme.dart
+│   ├── data/
+│   │   ├── datasources/
+│   │   │   ├── revenuecat_remote_datasource.dart
+│   │   │   ├── supabase_auth_remote_datasource.dart
+│   │   │   └── user_profile_data_source.dart
+│   │   ├── models/
+│   │   │   ├── goal_test_model.dart
+│   │   │   └── user_model.dart
+│   │   └── repositories/
+│   │       ├── auth_repository_impl.dart
+│   │       ├── goal_repository_impl.dart
+│   │       ├── profile_repository_impl.dart
+│   │       ├── subscription_repository_impl.dart
+│   │       └── user_survey_repository_impl.dart
+│   ├── di/
+│   │   ├── auth_providers.dart
+│   │   ├── daily_result_providers.dart
+│   │   ├── goal_providers.dart
+│   │   ├── profile_providers.dart
+│   │   ├── service_providers.dart
+│   │   └── subscription_providers.dart
+│   ├── domain/
+│   │   ├── entities/
+│   │   │   ├── active_goal.dart
+│   │   │   ├── app_usage_stat.dart
+│   │   │   ├── daily_result.dart
+│   │   │   ├── goal.dart
+│   │   │   ├── installed_app.dart
+│   │   │   ├── profile.dart
+│   │   │   └── user.dart
+│   │   ├── repositories/
+│   │   │   ├── auth_repository.dart
+│   │   │   ├── daily_result_repository.dart
+│   │   │   ├── goal_repository.dart
+│   │   │   ├── profile_repository.dart
+│   │   │   ├── subscription_repository.dart
+│   │   │   └── user_survey.dart
+│   │   └── usecases/
+│   │       ├── commit_onboarding_goal.dart
+│   │       ├── get_installed_apps.dart
+│   │       ├── get_last_7_days_results.dart
+│   │       ├── get_usage_top_apps.dart
+│   │       ├── purchase_subscription.dart
+│   │       ├── request_screen_time_permission.dart
+│   │       ├── save_goal_and_continue.dart
+│   │       ├── sign_up.dart
+│   │       └── verify_otp.dart
+│   ├── error/
+│   │   ├── exception.dart
+│   │   └── failures.dart
+│   └── services/
+│       ├── android_screen_time_service.dart
+│       └── screen_time_service.dart
+├── features/
+│   ├── auth/
+│   │   └── presentation/
+│   │       └── views/
+│   │           └── auth_gate.dart
+│   ├── dashboard/
+│   │   ├── data/
+│   │   │   └── get_dashboard_data.dart
+│   │   ├── domain/
+│   │   └── presentation/
+│   │       ├── viewmodels/
+│   │       │   └── dashboard_viewmodel.dart
+│   │       ├── views/
+│   │       │   └── dashboard_page.dart
+│   │       └── widgets/
+│   │           ├── app_usage_list.dart
+│   │           ├── progress_ring.dart
+│   │           └── weekly_bar_chart.dart
+│   ├── onboarding_post/
+│   │   ├── data/
+│   │   │   ├── datasources/
+│   │   │   │   ├── goal_remote_datasource.dart
+│   │   │   │   └── user_survey_remote_datasource.dart
+│   │   │   └── repositories/
+│   │   │       ├── goal_repository_impl.dart
+│   │   │       └── user_survey_repository_impl.dart
+│   │   ├── di/
+│   │   │   └── user_survey_providers.dart
+│   │   ├── domain/
+│   │   │   ├── entities/
+│   │   │   │   └── user_survey.dart
+│   │   │   ├── repositories/
+│   │   │   │   └── user_survey_repository.dart
+│   │   │   └── usecases/
+│   │   │       └── submit_user_survey.dart
+│   │   └── presentation/
+│   │       ├── viewmodels/
+│   │       │   ├── account_creation_viewmodel.dart
+│   │       │   ├── app_selection_viewmodel.dart
+│   │       │   ├── goal_setting_viewmodel.dart
+│   │       │   ├── pledge_viewmodel.dart
+│   │       │   ├── user_survey_viewmodel.dart
+│   │       │   └── verify_email_viewmodel.dart
+│   │       └── views/
+│   │           ├── account_creation_page.dart
+│   │           ├── app_selection_page.dart
+│   │           ├── congratulations_page.dart
+│   │           ├── goal_setting_page.dart
+│   │           ├── notification_permission_dialogue.dart
+│   │           ├── pledge_page.dart
+│   │           ├── user_survey_page.dart
+│   │           └── verify_email_page.dart
+│   ├── onboarding_pre/
+│   │   ├── di/
+│   │   │   └── permission_providers.dart
+│   │   ├── domain/
+│   │   │   └── usecases/
+│   │   │       └── get_weekly_screentime_data.dart
+│   │   └── presentation/
+│   │       ├── viewmodels/
+│   │       │   ├── permission_viewmodel.dart
+│   │       │   └── subscription_offer_viewmodel.dart
+│   │       └── views/
+│   │           ├── data_reveal_sequence.dart
+│   │           ├── free_trial_explained_page.dart
+│   │           ├── get_started_page.dart
+│   │           ├── how_it_works_sequence.dart
+│   │           ├── permission_page.dart
+│   │           ├── solution_page.dart
+│   │           ├── subscription_offer_page.dart
+│   │           └── subscription_primer_page.dart
+│   └── rewards/
+│       ├── data/
+│       │   ├── datasources/
+│       │   ├── model/
+│       │   └── repositories/
+│       ├── domain/
+│       │   ├── entities/
+│       │   ├── repositories/
+│       │   └── usecases/
+│       └── presentation/
+│           ├── viewmodels/
+│           ├── views/
+│           └── widgets/
+└── main.dart
+---
