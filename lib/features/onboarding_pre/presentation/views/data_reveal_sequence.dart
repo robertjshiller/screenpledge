@@ -1,17 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import 'package:screenpledge/core/config/theme/app_colors.dart';
 import 'package:screenpledge/core/config/theme/app_theme.dart';
 import 'package:screenpledge/core/common_widgets/primary_button.dart';
+import 'package:screenpledge/features/onboarding_pre/di/onboarding_pre_providers.dart';
 import 'package:screenpledge/features/onboarding_pre/presentation/views/solution_page.dart';
+import 'package:screenpledge/core/domain/entities/onboarding_stats.dart';
 
-class DataRevealSequence extends StatefulWidget {
+class DataRevealSequence extends ConsumerStatefulWidget {
   const DataRevealSequence({super.key});
 
   @override
-  State<DataRevealSequence> createState() => _DataRevealSequenceState();
+  ConsumerState<DataRevealSequence> createState() => _DataRevealSequenceState();
 }
 
-class _DataRevealSequenceState extends State<DataRevealSequence> {
+class _DataRevealSequenceState extends ConsumerState<DataRevealSequence> {
   int _sequence = 0;
   final PageController _pageController = PageController();
   int _currentPage = 0;
@@ -21,10 +25,11 @@ class _DataRevealSequenceState extends State<DataRevealSequence> {
     super.initState();
     _pageController.addListener(() {
       if (_pageController.page != null) {
-        setState(() {
-          _currentPage = _pageController.page!.round();
-          print('Current Page: $_currentPage'); // Debug print
-        });
+        if (mounted) {
+          setState(() {
+            _currentPage = _pageController.page!.round();
+          });
+        }
       }
     });
   }
@@ -36,30 +41,31 @@ class _DataRevealSequenceState extends State<DataRevealSequence> {
   }
 
   void _nextSequence() {
-    setState(() {
-      if (_sequence < 3) {
+    if (_sequence < 3) {
+      setState(() {
         _sequence++;
-      } else {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (context) => const SolutionPage(),
-          ),
-        );
-      }
-    });
+      });
+    } else {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (context) => const SolutionPage(),
+        ),
+      );
+    }
   }
 
   void _previousSequence() {
-    setState(() {
-      if (_sequence > 0) {
+    if (_sequence > 0) {
+      setState(() {
         _sequence--;
-      }
-    });
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final statsAsync = ref.watch(onboardingStatsViewModelProvider);
 
     return Scaffold(
       body: SafeArea(
@@ -123,165 +129,204 @@ class _DataRevealSequenceState extends State<DataRevealSequence> {
                     ),
 
                     // Sequence 2
-                    SingleChildScrollView(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        children: [
-                          const SizedBox(height: 24.0),
-                          Image.asset(
-                            'assets/mascot/mascot_calculating.png',
-                            width: MediaQuery.of(context).size.width * 0.75,
-                          ),
-                          const SizedBox(height: 24.0),
-                          Text(
-                            "The bad news?\nThis year alone, you'll spend around 80 days glued to your phone.\nOver your life you're on track to spend",
-                            style: textTheme.bodyLarge,
-                            textAlign: TextAlign.center,
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 8.0),
-                            child: ShaderMask(
-                              shaderCallback: (bounds) => const LinearGradient(
-                                colors: [
-                                  AppColors.gradientGreenStart,
-                                  AppColors.gradientGreenEnd
-                                ],
-                              ).createShader(bounds),
-                              child: Text(
-                                "16 years",
-                                style: AppTheme.displayExtraLarge.copyWith(
-                                  color: Colors.white,
+                    statsAsync.when(
+                      loading: () => const Center(child: CircularProgressIndicator()),
+                      error: (error, stack) => Center(
+                        child: Text(
+                          'Could not load screen time data.\nPlease ensure you have granted permission.\nError: $error',
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                      data: (stats) {
+                        // Calculate days per year based on average usage
+                        final daysPerYear = (stats.projectedLifetimeUsageInYears / 75) * 365.25;
+
+                        return SingleChildScrollView(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            children: [
+                              const SizedBox(height: 24.0),
+                              Image.asset(
+                                'assets/mascot/mascot_calculating.png',
+                                width:
+                                    MediaQuery.of(context).size.width * 0.75,
+                              ),
+                              const SizedBox(height: 24.0),
+                              Text(
+                                "The bad news?\nThis year alone, you'll spend around ${daysPerYear.toStringAsFixed(0)} days glued to your phone.\nOver your life you're on track to spend",
+                                style: textTheme.bodyLarge,
+                                textAlign: TextAlign.center,
+                              ),
+                              Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 8.0),
+                                child: ShaderMask(
+                                  shaderCallback: (bounds) =>
+                                      const LinearGradient(
+                                    colors: [
+                                      AppColors.gradientGreenStart,
+                                      AppColors.gradientGreenEnd
+                                    ],
+                                  ).createShader(bounds),
+                                  child: Text(
+                                    // Display the lifetime usage in years, rounded to one decimal place.
+                                    "${stats.projectedLifetimeUsageInYears.toStringAsFixed(1)} years",
+                                    style: AppTheme.displayExtraLarge.copyWith(
+                                      color: Colors.white,
+                                    ),
+                                  ),
                                 ),
                               ),
-                            ),
+                              Text(
+                                "of your life looking down at a screen.\nYes, you read that correctly.",
+                                style: textTheme.bodyLarge,
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
                           ),
+                        );
+                      },
+                    ),
+
+                    // Sequence 3
+                    statsAsync.when(
+                      // Show a simplified loader/error state for this slide
+                      loading: () => const Center(child: CircularProgressIndicator()),
+                      error: (error, stack) => const Center(child: Text('Could not load activities.')),
+                      data: (stats) => Column(
+                        children: [
+                          const SizedBox(height: 12.0),
                           Text(
-                            "of your life looking down at a screen.\nYes, you read that correctly.",
-                            style: textTheme.bodyLarge,
+                            "Instead of scrolling, you could...",
+                            style: textTheme.displayLarge,
                             textAlign: TextAlign.center,
                           ),
+                          Expanded(
+                            child: Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                PageView.builder(
+                                  controller: _pageController,
+                                  itemCount: 3,
+                                  itemBuilder: (context, index) {
+                                    // Pass the stats object to the card builder
+                                    return _buildCarouselCard(index, stats);
+                                  },
+                                ),
+                                // Left Arrow
+                                Positioned(
+                                  left: 0,
+                                  child: AnimatedOpacity(
+                                    opacity: _currentPage > 0 ? 1.0 : 0.0,
+                                    duration: const Duration(milliseconds: 200),
+                                    child: IconButton(
+                                      icon: const Icon(Icons.arrow_back_ios,
+                                          color: AppColors.primaryText),
+                                      onPressed: () {
+                                        if (_currentPage > 0) {
+                                          _pageController.previousPage(
+                                            duration: const Duration(
+                                                milliseconds: 300),
+                                            curve: Curves.easeInOut,
+                                          );
+                                        }
+                                      },
+                                    ),
+                                  ),
+                                ),
+                                // Right Arrow
+                                Positioned(
+                                  right: 0,
+                                  child: AnimatedOpacity(
+                                    opacity: _currentPage < 2 ? 1.0 : 0.0,
+                                    duration: const Duration(milliseconds: 200),
+                                    child: IconButton(
+                                      icon: const Icon(Icons.arrow_forward_ios,
+                                          color: AppColors.primaryText),
+                                      onPressed: () {
+                                        if (_currentPage < 2) {
+                                          _pageController.nextPage(
+                                            duration: const Duration(
+                                                milliseconds: 300),
+                                            curve: Curves.easeInOut,
+                                          );
+                                        }
+                                      },
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: List.generate(3, (index) {
+                              return Container(
+                                width: 8.0,
+                                height: 8.0,
+                                margin: const EdgeInsets.symmetric(horizontal: 4.0),
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: _currentPage == index 
+                                      ? AppColors.primaryText
+                                      : Colors.grey[300],
+                                ),
+                              );
+                            }),
+                          ),
+                          const SizedBox(height: 24.0),
                         ],
                       ),
                     ),
 
-                    // Sequence 3
-                    // Sequence 3
-                    Column(
-                      children: [
-                        const SizedBox(height: 48.0),
-                        Text(
-                          "Instead of scrolling, you could...",
-                          style: textTheme.displayLarge,
-                          textAlign: TextAlign.center,
-                        ),
-                        Expanded(
-                          child: Stack(
-                            alignment: Alignment.center,
-                            children: [
-                              PageView.builder(
-                                controller: _pageController,
-                                itemCount: 3,
-                                itemBuilder: (context, index) {
-                                  return _buildCarouselCard(index);
-                                },
-                              ),
-                              // Left Arrow
-                              Positioned(
-                                left: 0,
-                                child: AnimatedOpacity(
-                                  opacity: _currentPage > 0 ? 1.0 : 0.0,
-                                  duration: const Duration(milliseconds: 200),
-                                  child: IconButton(
-                                    icon: const Icon(Icons.arrow_back_ios, color: AppColors.primaryText),
-                                    onPressed: () {
-                                      if (_currentPage > 0) {
-                                        _pageController.previousPage(
-                                          duration: const Duration(milliseconds: 300),
-                                          curve: Curves.easeInOut,
-                                        );
-                                      }
-                                    },
-                                  ),
-                                ),
-                              ),
-                              // Right Arrow
-                              Positioned(
-                                right: 0,
-                                child: AnimatedOpacity(
-                                  opacity: _currentPage < 2 ? 1.0 : 0.0,
-                                  duration: const Duration(milliseconds: 200),
-                                  child: IconButton(
-                                    icon: const Icon(Icons.arrow_forward_ios, color: AppColors.primaryText),
-                                    onPressed: () {
-                                      if (_currentPage < 2) {
-                                        _pageController.nextPage(
-                                          duration: const Duration(milliseconds: 300),
-                                          curve: Curves.easeInOut,
-                                        );
-                                      }
-                                    },
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: List.generate(3, (index) {
-                            return Container(
-                              width: 8.0,
-                              height: 8.0,
-                              margin: const EdgeInsets.symmetric(horizontal: 4.0),
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: _currentPage == index
-                                    ? AppColors.primaryText
-                                    : Colors.grey[300],
-                              ),
-                            );
-                          }),
-                        ),
-                        const SizedBox(height: 24.0),
-                      ],
-                    ),
-
                     // Sequence 4
-                    Center(
-                      child: SingleChildScrollView(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              "Don't worry.\nWe got good news!\n\nWith ScreenPledge, you can reclaim",
-                              style: textTheme.bodyLarge,
-                              textAlign: TextAlign.center,
-                            ),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 8.0),
-                              child: ShaderMask(
-                                shaderCallback: (bounds) => const LinearGradient(
-                                  colors: [
-                                    AppColors.gradientGreenStart,
-                                    AppColors.gradientGreenEnd
-                                  ],
-                                ).createShader(bounds),
-                                child: Text(
-                                  "5+ years",
-                                  style: AppTheme.displayExtraLarge.copyWith(
-                                    color: Colors.white,
+                    statsAsync.when(
+                      loading: () => const Center(child: CircularProgressIndicator()),
+                      error: (error, stack) => const Center(child: Text('Could not load stats.')),
+                      data: (stats) {
+                        // Calculate the reclaimable years, which is 1/3rd of the total projected usage.
+                        final reclaimableYears = stats.projectedLifetimeUsageInYears / 3;
+
+                        return Center(
+                          child: SingleChildScrollView(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  "Don't worry.\nWe got good news!\n\nWith ScreenPledge, you can reclaim",
+                                  style: textTheme.bodyLarge,
+                                  textAlign: TextAlign.center,
+                                ),
+                                Padding(
+                                  padding: 
+                                      const EdgeInsets.symmetric(vertical: 8.0),
+                                  child: ShaderMask(
+                                    shaderCallback: (bounds) =>
+                                        const LinearGradient(
+                                      colors: [
+                                        AppColors.gradientGreenStart,
+                                        AppColors.gradientGreenEnd
+                                      ],
+                                    ).createShader(bounds),
+                                    child: Text(
+                                      // Display the calculated value, rounded to one decimal place.
+                                      "${reclaimableYears.toStringAsFixed(1)}+ years",
+                                      style: AppTheme.displayExtraLarge.copyWith(
+                                        color: Colors.white,
+                                      ),
+                                    ),
                                   ),
                                 ),
-                              ),
+                                Text(
+                                  "of your life from distractions-- and finally have the time to live your best life.",
+                                  style: textTheme.bodyLarge,
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
                             ),
-                            Text(
-                              "of your life from distractions-- and finally have the time to live your best life.",
-                              style: textTheme.bodyLarge,
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
-                        ),
-                      ),
+                          ),
+                        );
+                      },
                     ),
                   ],
                 ),
@@ -290,15 +335,22 @@ class _DataRevealSequenceState extends State<DataRevealSequence> {
             // Disclaimer text (conditionally shown)
             if (_sequence == 1)
               Padding(
-                padding: const EdgeInsets.only(bottom: 16.0, left: 24.0, right: 24.0),
-                child: Text(
-                  "Based on your current Screen Time, for 16 hour waking days.",
-                  style: textTheme.labelSmall,
-                  textAlign: TextAlign.center,
+                padding: const EdgeInsets.only(
+                    bottom: 16.0, left: 24.0, right: 24.0),
+                child: statsAsync.when(
+                  loading: () => const SizedBox(height: 20), // Placeholder
+                  error: (_, __) => const SizedBox(height: 20), // Placeholder
+                  data: (stats) => Text(
+                    "Based on your average of ${stats.averageDailyUsageFormatted} per day, over 16 hour waking days.",
+                    style: textTheme.labelSmall,
+                    textAlign: TextAlign.center,
+                  ),
                 ),
               )
             else
-              const SizedBox(height: 40), // Placeholder for the disclaimer space
+              const SizedBox(
+                  height:
+                      40), // Placeholder for the disclaimer space, adjusted for typical text height
 
             // Continue Button
             Padding(
@@ -317,18 +369,21 @@ class _DataRevealSequenceState extends State<DataRevealSequence> {
     );
   }
 
-  Widget _buildCarouselCard(int index) {
+  Widget _buildCarouselCard(int index, OnboardingStats stats) {
+    // Use a number formatter for nice comma-separated numbers.
+    final formatter = NumberFormat('#,###');
+
     final List<Map<String, String>> cardData = [
       {
-        "text": "Read 1,000 books",
+        "text": "Read ${formatter.format(stats.reclaimedBooks)} books",
         "image": "assets/mascot/mascot_books.png",
       },
       {
-        "text": "Have 1,500 family dinners",
+        "text": "Have ${formatter.format(stats.reclaimedMeals)} family meals",
         "image": "assets/mascot/mascot_family.png",
       },
       {
-        "text": "Take 360 life-changing trips",
+        "text": "Take ${formatter.format(stats.reclaimedTrips)} life-changing trips",
         "image": "assets/mascot/mascot_travelling.png",
       },
     ];

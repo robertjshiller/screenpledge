@@ -27,7 +27,7 @@ class AppTheme {
   /// For extra large, impactful text like statistics
   static const TextStyle displayExtraLarge = TextStyle(
     fontFamily: 'Open Sans',
-    fontSize: 60.0,
+    fontSize: 52.0,
     fontWeight: FontWeight.w800, // Extra Bold
     color: AppColors.primaryText, // Fallback color, gradient will be applied on top
   );

@@ -1,3 +1,4 @@
+<!-- // File: android/app/src/main/AndroidManifest.xml -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     package="com.screenpledge.app">
@@ -5,6 +6,15 @@
     <!-- This permission is for the UsageStatsManager -->
     <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS"
         tools:ignore="ProtectedPermissions" />
+
+    <!-- ✅ NEW: Required for Android 13 (API 33) and above to post notifications. -->
+    <!-- This permission will be requested from the user at runtime. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+
+    <!-- ✅ NEW: Required for older Android versions to ensure that scheduled -->
+    <!-- notifications are rescheduled correctly after the device reboots. -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+
 
     <!-- ✅ ADDED: This is the new, critical part for Package Visibility. -->
     <!-- This tag declares that our app has a legitimate need to query for other apps -->
@@ -24,7 +34,7 @@
             android:name=".MainActivity"
             android:exported="true"
             android:launchMode="singleTop"
-            android:theme="@style/LaunchTheme"
+            android:theme="@style/NormalTheme"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
             android:hardwareAccelerated="true"
             android:windowSoftInputMode="adjustResize">

@@ -1,5 +1,4 @@
-// lib/core/services/screen_time_service.dart
-
+// Original comments are retained.
 import 'package:screenpledge/core/domain/entities/app_usage_stat.dart';
 import 'package:screenpledge/core/domain/entities/installed_app.dart';
 
@@ -70,4 +69,12 @@ abstract class ScreenTimeService {
   /// ✅ ADDED: Fetches a detailed breakdown of per-app usage for today,
   /// sorted by duration in descending order.
   Future<List<AppUsageStat>> getDailyUsageBreakdown();
+
+  /// Fetches the total screen time for each of the last six days, excluding today.
+  Future<List<Duration>> getScreenTimeForLastSixDays();
+
+  // ✅ NEW: A dedicated method to get the final, total device usage for a
+  // specific historical date. This is essential for our background data
+  // submission task, which needs to report "yesterday's" final total.
+  Future<Duration> getTotalUsageForDate(DateTime date);
 }

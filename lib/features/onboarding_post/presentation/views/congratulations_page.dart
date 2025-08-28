@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:screenpledge/core/common_widgets/primary_button.dart';
 import 'package:screenpledge/core/config/theme/app_colors.dart';
 import 'package:screenpledge/features/onboarding_post/presentation/views/user_survey_page.dart';
+// ✅ NEW: Import our new notification permission dialog.
+import 'package:screenpledge/features/onboarding_post/presentation/widgets/notification_permission_dialog.dart';
 
 /// A celebratory page shown after a user has successfully created and
 /// verified their account.
@@ -12,6 +14,29 @@ import 'package:screenpledge/features/onboarding_post/presentation/views/user_su
 /// before proceeding to the final setup steps.
 class CongratulationsPage extends StatelessWidget {
   const CongratulationsPage({super.key});
+
+  // ✅ NEW: A private method to show our custom notification dialog.
+  void _showNotificationDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      // The user can tap outside to dismiss, as this is not a mandatory step.
+      barrierDismissible: true,
+      builder: (BuildContext dialogContext) {
+        return NotificationPermissionDialog(
+          // The onContinue callback defines what happens after the dialog is closed.
+          onContinue: () {
+            // Navigate to the user survey, replacing the current page.
+            // This ensures the user can't go back to the congratulations page.
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(
+                builder: (context) => const UserSurveyPage(),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -53,16 +78,12 @@ class CongratulationsPage extends StatelessWidget {
               ),
               const Spacer(),
 
-              // A single, clear call-to-action to move forward.
+              // ✅ CHANGED: The button's onPressed callback now calls our new method
+              // to show the notification priming dialog.
               PrimaryButton(
                 text: "Let's Get Started",
                 onPressed: () {
-                  // Navigate to the user survey, replacing this page.
-                  Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(
-                      builder: (context) => const UserSurveyPage(),
-                    ),
-                  );
+                  _showNotificationDialog(context);
                 },
               ),
             ],

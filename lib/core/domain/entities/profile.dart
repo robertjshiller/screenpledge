@@ -1,3 +1,6 @@
+// lib/core/domain/entities/profile.dart
+
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 
 /// Represents a user's public profile data, as stored in the `profiles` table.
@@ -82,26 +85,58 @@ class Profile {
   ///
   /// This factory is used to deserialize the data fetched from the Supabase
   /// `profiles` table into a type-safe Dart object.
-  factory Profile.fromJson(Map<String, dynamic> json) {
+  factory Profile.fromMap(Map<String, dynamic> map) {
     return Profile(
-      id: json['id'] as String,
-      email: json['email'] as String?,
-      fullName: json['full_name'] as String?,
-      pledgePoints: json['pledge_points'] as int,
-      lifetimePledgePoints: json['lifetime_pledge_points'] as int,
-      streakCount: json['streak_count'] as int,
-      pledgeStatus: json['pledge_status'] as String,
-      pledgeAmountCents: json['pledge_amount_cents'] as int,
-      userTimezone: json['user_timezone'] as String?,
-      onboardingCompletedSurvey: json['onboarding_completed_survey'] as bool,
-      onboardingCompletedGoalSetup: json['onboarding_completed_goal_setup'] as bool,
-      onboardingCompletedPledgeSetup: json['onboarding_completed_pledge_setup'] as bool,
-      // ✅ ADDED: Safely cast the jsonb column to a Map. It can be null.
-      onboardingDraftGoal: json['onboarding_draft_goal'] as Map<String, dynamic>?,
-      createdAt: DateTime.parse(json['created_at'] as String),
-      updatedAt: DateTime.parse(json['updated_at'] as String),
+      id: map['id'] as String,
+      email: map['email'] as String?,
+      fullName: map['full_name'] as String?,
+      pledgePoints: map['pledge_points'] as int,
+      lifetimePledgePoints: map['lifetime_pledge_points'] as int,
+      streakCount: map['streak_count'] as int,
+      pledgeStatus: map['pledge_status'] as String,
+      pledgeAmountCents: map['pledge_amount_cents'] as int,
+      userTimezone: map['user_timezone'] as String?,
+      onboardingCompletedSurvey: map['onboarding_completed_survey'] as bool,
+      onboardingCompletedGoalSetup: map['onboarding_completed_goal_setup'] as bool,
+      onboardingCompletedPledgeSetup: map['onboarding_completed_pledge_setup'] as bool,
+      onboardingDraftGoal: map['onboarding_draft_goal'] != null
+          ? Map<String, dynamic>.from(map['onboarding_draft_goal'])
+          : null,
+      createdAt: DateTime.parse(map['created_at'] as String),
+      updatedAt: DateTime.parse(map['updated_at'] as String),
     );
   }
+
+  /// ✅ NEW: Creates a [Profile] instance from a JSON string.
+  /// This is a convenience factory for deserializing data from SharedPreferences.
+  factory Profile.fromJson(String source) =>
+      Profile.fromMap(json.decode(source) as Map<String, dynamic>);
+
+  /// ✅ NEW: Converts the [Profile] instance into a map.
+  /// This is the first step in serializing the object to a JSON string.
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'email': email,
+      'full_name': fullName,
+      'pledge_points': pledgePoints,
+      'lifetime_pledge_points': lifetimePledgePoints,
+      'streak_count': streakCount,
+      'pledge_status': pledgeStatus,
+      'pledge_amount_cents': pledgeAmountCents,
+      'user_timezone': userTimezone,
+      'onboarding_completed_survey': onboardingCompletedSurvey,
+      'onboarding_completed_goal_setup': onboardingCompletedGoalSetup,
+      'onboarding_completed_pledge_setup': onboardingCompletedPledgeSetup,
+      'onboarding_draft_goal': onboardingDraftGoal,
+      'created_at': createdAt.toIso8601String(),
+      'updated_at': updatedAt.toIso8601String(),
+    };
+  }
+
+  /// ✅ NEW: Converts the [Profile] instance into a JSON string.
+  /// This is used for saving the object to SharedPreferences.
+  String toJson() => json.encode(toMap());
 
   // Override equality and hashCode to ensure two Profile instances with the
   // same ID are treated as equal.

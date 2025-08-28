@@ -67,6 +67,7 @@ CREATE TABLE public.daily_results (
   pledge_charged_cents integer NOT NULL DEFAULT 0,
   time_spent_seconds integer,
   time_limit_seconds integer,
+  timezone TEXT,
   acknowledged_at timestamp with time zone,
   created_at timestamp with time zone NOT NULL DEFAULT now()
 );

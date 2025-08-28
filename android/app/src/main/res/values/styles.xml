@@ -1,18 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Theme applied to the Android Window while the process is starting when the OS's Dark Mode setting is off -->
-    <style name="LaunchTheme" parent="@android:style/Theme.Light.NoTitleBar">
-        <!-- Show a splash screen on the activity. Automatically removed when
-             the Flutter engine draws its first frame -->
+    <!-- Theme applied to the Android Window while the process is starting when the OS's Splash Screen shows. -->
+    <!-- This theme is visible to the user until the Flutter UI paints its first frame. -->
+    <style name="LaunchTheme" parent="Theme.AppCompat.Light.NoActionBar">
+        <!-- Show a solid background behind the status bar for fullscreen visibility. -->
         <item name="android:windowBackground">@drawable/launch_background</item>
     </style>
-    <!-- Theme applied to the Android Window as soon as the process has started.
-         This theme determines the color of the Android Window while your
-         Flutter UI initializes, as well as behind your Flutter UI while its
-         running.
 
-         This Theme is only used starting with V2 of Flutter's Android embedding. -->
-    <style name="NormalTheme" parent="@android:style/Theme.Light.NoTitleBar">
+    <!-- Theme applied to the Android Window as soon as the Flutter UI paints its first frame. -->
+    <!-- ✅ CHANGED: The parent of this theme is the key. -->
+    <!-- It was likely set to an older theme. We are changing it to Theme.MaterialComponents.DayNight.NoActionBar. -->
+    <!-- This is a modern theme that Stripe's native UI requires to function correctly. -->
+    <!-- "DayNight" automatically handles light and dark modes, and "NoActionBar" is standard for Flutter apps. -->
+    <style name="NormalTheme" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <!-- Show a solid background behind the status bar for fullscreen visibility. -->
         <item name="android:windowBackground">?android:colorBackground</item>
     </style>
 </resources>

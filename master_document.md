@@ -360,6 +360,7 @@ lib/
 │   │   │   ├── daily_result.dart
 │   │   │   ├── goal.dart
 │   │   │   ├── installed_app.dart
+│   │   │   ├── onboarding_stats.dart
 │   │   │   ├── profile.dart
 │   │   │   └── user.dart
 │   │   ├── repositories/
@@ -373,6 +374,7 @@ lib/
 │   │       ├── commit_onboarding_goal.dart
 │   │       ├── get_installed_apps.dart
 │   │       ├── get_last_7_days_results.dart
+│   │       ├── get_onboarding_stats.dart
 │   │       ├── get_usage_top_apps.dart
 │   │       ├── purchase_subscription.dart
 │   │       ├── request_screen_time_permission.dart
@@ -439,12 +441,14 @@ lib/
 │   │           └── verify_email_page.dart
 │   ├── onboarding_pre/
 │   │   ├── di/
+│   │   │   ├── onboarding_pre_providers.dart
 │   │   │   └── permission_providers.dart
 │   │   ├── domain/
 │   │   │   └── usecases/
 │   │   │       └── get_weekly_screentime_data.dart
 │   │   └── presentation/
 │   │       ├── viewmodels/
+│   │       │   ├── onboarding_stats_viewmodel.dart
 │   │       │   ├── permission_viewmodel.dart
 │   │       │   └── subscription_offer_viewmodel.dart
 │   │       └── views/

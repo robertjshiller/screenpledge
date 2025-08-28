@@ -1,5 +1,4 @@
-// lib/core/domain/repositories/profile_repository.dart
-
+// Original comments are retained.
 import 'package:screenpledge/core/domain/entities/profile.dart';
 
 /// The contract (interface) for a repository that handles Profile-related data operations.
@@ -13,4 +12,8 @@ abstract class IProfileRepository {
 
   /// ✅ ADDED: A dedicated method to save the draft goal and update the flag via an RPC.
   Future<void> saveOnboardingDraftGoal(Map<String, dynamic> draftGoal);
+
+  // ✅ NEW: A method to call the backend function that creates a Stripe Setup Intent.
+  // It returns the client_secret required by the Stripe SDK on the frontend.
+  Future<String> createStripeSetupIntent();
 }

@@ -1,5 +1,6 @@
 // lib/main.dart
 
+// Original comments are retained.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart'; // ✅ ADDED: Required for Riverpod state management.
 import 'package:screenpledge/core/config/theme/app_theme.dart';
@@ -7,6 +8,41 @@ import 'package:screenpledge/features/auth/presentation/views/auth_gate.dart'; /
 import 'package:screenpledge/core/data/datasources/revenuecat_remote_datasource.dart';
 import 'package:supabase_flutter/supabase_flutter.dart'; // ✅ ADDED: The official Supabase Flutter SDK.
 import 'package:flutter_dotenv/flutter_dotenv.dart'; // ✅ ADDED: The package to read .env files.
+import 'package:flutter_stripe/flutter_stripe.dart'; // ✅ ADDED: The official Stripe Flutter SDK.
+// ✅ NEW: Import the workmanager package.
+import 'package:workmanager/workmanager.dart';
+// ✅ NEW: Import our new background task handler file.
+import 'package:screenpledge/core/services/background_task_handler.dart';
+// ✅ NEW: Import our new notification service.
+import 'package:screenpledge/core/services/notification_service.dart';
+
+// ✅ NEW: Define the unique name for our daily data submission task.
+// Using a constant helps prevent typos and makes the code easier to manage.
+const dailyDataSubmissionTask = "com.screenpledge.app.dailyDataSubmissionTask";
+
+// ✅ NEW: This is the top-level function that Workmanager will call.
+// It must be defined outside of any class.
+// When the OS triggers the background task, this function is the entry point.
+// It then calls our more organized BackgroundTaskHandler to do the actual work.
+@pragma('vm:entry-point') // Mandatory annotation for background execution
+void callbackDispatcher() {
+  // The `executeTask` method is where the actual logic will live.
+  // It needs to be initialized here to handle the task execution.
+  Workmanager().executeTask((task, inputData) async {
+    // We only have one task for now, but a switch statement is good practice
+    // in case we add more background tasks in the future.
+    switch (task) {
+      case dailyDataSubmissionTask:
+        // Initialize a BackgroundTaskHandler and run the submission logic.
+        final handler = BackgroundTaskHandler();
+        await handler.submitDailyData();
+        break;
+    }
+    // Return true to indicate that the task was successful.
+    return Future.value(true);
+  });
+}
+
 
 /// The main entry point for the ScreenPledge application.
 ///
@@ -17,7 +53,7 @@ void main() async {
   // ✅ NEW: Ensure Flutter engine bindings are initialized BEFORE any async setup.
   // This is required if we perform asynchronous initialization (like dotenv or Supabase)
   // prior to calling runApp().
-  WidgetsFlutterBinding.ensureInitialized();
+  WidgetsFlutterBinding.ensureInitialized();  
 
   // ✅ ADDED: Load environment variables from the .env file into memory.
   // This must be done before trying to access any of the variables.
@@ -31,6 +67,38 @@ void main() async {
     url: dotenv.env['SUPABASE_URL']!,
     anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
   );
+
+  // ✅ ADDED: Initialize the Stripe SDK with the publishable key from .env.
+  // This must be done before any other Stripe methods are called.
+  // The `!` (null-check operator) tells Dart we are certain this value exists.
+  Stripe.publishableKey = dotenv.env['STRIPE_PUBLISHABLE_KEY']!;
+  await Stripe.instance.applySettings();
+
+  // ✅ NEW: Initialize our NotificationService.
+  // This sets up the channels and prepares the plugin for use. Must be called
+  // before any notifications can be shown.
+  await NotificationService.initialize();
+
+  // ✅ NEW: Initialize the Workmanager service.
+  // This tells the app to listen for background task triggers from the OS.
+  // The `callbackDispatcher` is the function that will be called when a task runs.
+  await Workmanager().initialize(
+    callbackDispatcher,
+    isInDebugMode: true, // Set to false for release builds. Logs task execution to console.
+  );
+
+  // ✅ NEW: Register our periodic task for daily data submission.
+  // This tells the OS to run our task approximately once every 24 hours.
+  // The OS will optimize for battery, so the timing is not exact.
+  // `existingWorkPolicy: ExistingWorkPolicy.keep` ensures that if a task is
+  // already scheduled, we don't accidentally create a duplicate one on app restart.
+  Workmanager().registerPeriodicTask(
+    "dailyDataSubmissionTask-1", // A unique name for the registration.
+    dailyDataSubmissionTask,     // The name of the task itself.
+    frequency: const Duration(days: 1),
+    existingWorkPolicy: ExistingWorkPolicy.keep,
+  );
+
 
   // ✅ NEW: Initialize RevenueCat as EARLY as possible in the app lifecycle.
   // Why here?

@@ -1,5 +1,4 @@
-// lib/features/onboarding_post/presentation/views/pledge_page.dart
-
+// Original comments are retained.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:screenpledge/core/config/theme/app_colors.dart';
@@ -8,8 +7,9 @@ import 'package:screenpledge/core/di/profile_providers.dart';
 import 'package:screenpledge/features/dashboard/presentation/views/dashboard_page.dart';
 import 'package:screenpledge/features/onboarding_post/presentation/viewmodels/pledge_viewmodel.dart';
 import 'package:screenpledge/features/onboarding_post/presentation/views/goal_setting_page.dart';
-// ✅ ADDED: Import for our new custom dialog widget.
 import 'package:screenpledge/features/onboarding_post/presentation/widgets/confirmation_dialog.dart';
+// ✅ NEW: Import for our new celebratory "Pledge Activated" page.
+import 'package:screenpledge/features/onboarding_post/presentation/views/pledge_activated_page.dart';
 
 class PledgePage extends ConsumerStatefulWidget {
   const PledgePage({super.key});
@@ -22,7 +22,7 @@ class _PledgePageState extends ConsumerState<PledgePage> {
   // Local UI state for the slider. The checkbox state is now managed by the dialog.
   double _currentPledgeValue = 25.0;
 
-  // ✅ ADDED: A method to show our new custom dialog.
+  // The method to show our custom dialog remains unchanged.
   void _showConfirmationDialog() {
     // `showDialog` is a built-in Flutter function that displays a modal.
     showDialog(
@@ -42,7 +42,8 @@ class _PledgePageState extends ConsumerState<PledgePage> {
               onConfirm: () {
                 // The onConfirm callback triggers the final activation logic.
                 final amountInCents = (_currentPledgeValue * 100).toInt();
-                ref.read(pledgeViewModelProvider.notifier).activatePledge(amountCents: amountInCents);
+                // This call remains the same. The listener below will handle the navigation on success.
+                ref.read(pledgeViewModelProvider.notifier).savePaymentMethodAndActivatePledge(amountCents: amountInCents);
               },
             );
           },
@@ -57,12 +58,13 @@ class _PledgePageState extends ConsumerState<PledgePage> {
     final viewModelState = ref.watch(pledgeViewModelProvider);
     final profileState = ref.watch(myProfileProvider);
 
-    // The listener remains the same. It will navigate after the ViewModel
-    // successfully completes the `activatePledge` or `skipPledge` action.
+    // ✅ CHANGED: The listener's logic has been updated.
+    // It now ONLY handles the navigation for a SUCCESSFUL PLEDGE ACTIVATION.
+    // The navigation for skipping a pledge is now handled directly in the "Not Now" button.
     ref.listen<AsyncValue<void>>(pledgeViewModelProvider, (previous, next) {
       next.whenOrNull(
         error: (error, stackTrace) {
-          // If there's an error, close the dialog first, then show the error.
+          // Error handling remains the same. If anything fails, close the dialog and show an error.
           if (Navigator.of(context).canPop()) {
             Navigator.of(context).pop();
           }
@@ -74,11 +76,19 @@ class _PledgePageState extends ConsumerState<PledgePage> {
           );
         },
         data: (_) {
+          // This success case is now specifically for when a pledge is activated.
           if (previous?.isLoading == true) {
-            // On success, navigate to the dashboard.
+            // Get the final pledge amount from the local state of this widget.
+            final amountInCents = (_currentPledgeValue * 100).toInt();
+
+            // Navigate to the new celebratory page, passing the pledge amount.
             Navigator.of(context).pushAndRemoveUntil(
-              MaterialPageRoute(builder: (context) => const DashboardPage()),
-              (route) => false,
+              MaterialPageRoute(
+                builder: (context) => PledgeActivatedPage(
+                  pledgeAmountCents: amountInCents,
+                ),
+              ),
+              (route) => false, // This removes all previous routes from the stack.
             );
           }
         },
@@ -94,8 +104,7 @@ class _PledgePageState extends ConsumerState<PledgePage> {
         ),
       ),
       body: SafeArea(
-        // ✅ CHANGED: Re-introduced the "Smart Scrolling" layout to guarantee
-        // no overflows on any screen size with the new content order.
+        // The "Smart Scrolling" layout remains the same.
         child: LayoutBuilder(
           builder: (context, constraints) {
             return SingleChildScrollView(
@@ -107,7 +116,7 @@ class _PledgePageState extends ConsumerState<PledgePage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        // ✅ CHANGED: The layout now follows your proposed flow.
+                        // The layout remains the same.
                         const Spacer(flex: 2),
                         Text(
                           'This is the single most effective step to guarantee your success.',
@@ -137,7 +146,7 @@ class _PledgePageState extends ConsumerState<PledgePage> {
                         ),
                         const SizedBox(height: 24),
                         
-                        // The "Goal Review" component now comes after the motivation.
+                        // The "Goal Review" component remains the same.
                         profileState.when(
                           loading: () => const SizedBox(height: 60, child: Center(child: CircularProgressIndicator())),
                           error: (err, st) => Text('Could not load goal: $err'),
@@ -192,24 +201,32 @@ class _PledgePageState extends ConsumerState<PledgePage> {
                           ],
                         ),
 
-                        // ✅ REMOVED: The entire "Confirm Your Understanding" Column
-                        // with the CheckboxListTiles has been removed from this page.
-                        // Its logic now lives inside the ConfirmationDialog.
-
                         const Spacer(flex: 3),
                         PrimaryButton(
                           text: 'Activate My Pledge',
-                          // ✅ CHANGED: The button's job is now to open the confirmation dialog.
-                          // We disable it if the ViewModel is loading to prevent opening the dialog
-                          // while another operation is in progress.
+                          // The button's job is still to open the confirmation dialog.
                           onPressed: viewModelState.isLoading ? null : _showConfirmationDialog,
                         ),
                         const SizedBox(height: 16),
                         TextButton(
+                          // ✅ CHANGED: The logic for the "Not Now" button is now self-contained.
+                          // It no longer relies on the listener for navigation.
                           onPressed: viewModelState.isLoading
                               ? null
-                              : () {
-                                  ref.read(pledgeViewModelProvider.notifier).skipPledge();
+                              : () async { // Make the callback async
+                                  // Await the completion of the skipPledge action.
+                                  await ref.read(pledgeViewModelProvider.notifier).skipPledge();
+                                  
+                                  // After it completes, check the view model's state.
+                                  // If there is NO error, it means it was successful, so we can navigate.
+                                  // This prevents navigating away if the skip action fails for some reason.
+                                  // The `mounted` check is a good practice to ensure the widget is still in the tree.
+                                  if (ref.read(pledgeViewModelProvider).hasError == false && mounted) {
+                                    Navigator.of(context).pushAndRemoveUntil(
+                                      MaterialPageRoute(builder: (context) => const DashboardPage()),
+                                      (route) => false,
+                                    );
+                                  }
                                 },
                           child: Text(
                             'Not Now',

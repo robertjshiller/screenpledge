@@ -1,5 +1,4 @@
-// lib/core/services/android_screen_time_service.dart
-
+// Original comments are retained.
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -173,7 +172,7 @@ class AndroidScreenTimeService implements ScreenTimeService {
       }
       return usageMap;
     } on PlatformException catch (e) {
-      debugPrint("Failed to get usage for date range: '${e.message}'.");  
+      debugPrint("Failed to get usage for date range: '${e.message}'.");
       return const {};
     }
   }
@@ -202,6 +201,38 @@ class AndroidScreenTimeService implements ScreenTimeService {
     } on PlatformException catch (e) {
       debugPrint("Failed to get daily usage breakdown: '${e.message}'.");
       return [];
+    }
+  }
+
+  @override
+  Future<List<Duration>> getScreenTimeForLastSixDays() async {
+    try {
+      // This method expects the native side to return a list of integers,
+      // where each integer is the total usage in milliseconds for one day.
+      final List<dynamic>? result = await _channel.invokeMethod('getScreenTimeForLastSixDays');
+      if (result == null) return [];
+
+      // Convert the list of dynamic (expected to be int) to a list of Durations.
+      return result.map((millis) => Duration(milliseconds: millis as int)).toList();
+    } on PlatformException catch (e) {
+      debugPrint("Failed to get screen time for last six days: '${e.message}'.");
+      return [];
+    }
+  }
+
+  // ✅ NEW: Implementation for our new method.
+  @override
+  Future<Duration> getTotalUsageForDate(DateTime date) async {
+    try {
+      // We pass the date to the native side as milliseconds since epoch.
+      final int millis = await _channel.invokeMethod<int>(
+        'getTotalUsageForDate',
+        {'date': date.millisecondsSinceEpoch},
+      ) ?? 0;
+      return Duration(milliseconds: millis);
+    } on PlatformException catch (e) {
+      debugPrint("Failed to get total usage for date: '${e.message}'.");
+      return Duration.zero;
     }
   }
 }

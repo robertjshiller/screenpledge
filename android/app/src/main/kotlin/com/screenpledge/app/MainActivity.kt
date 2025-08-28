@@ -6,7 +6,7 @@
 //   • Build app‑active intervals from foreground events (RESUMED/PAUSED or MOVE_TO_*, API‑aware)
 //   • Build gating windows: SCREEN_INTERACTIVE/NON_INTERACTIVE  ∩  KEYGUARD_HIDDEN/SHOWN
 //   • Intersect ACTIVE with the gate, CLIP to local day bounds, MERGE, and SUM
-//   • Filter to LAUNCHABLE apps for device totals (avoid SystemUI inflating counts)
+//   • Filter to LAUNCHABLE apps for device totals (avoid SystemUI inflating totals)
 //   • Conservative fallbacks to avoid 24h spikes on emulators/OEMs with missing gates:
 //       - If screen gate is MISSING for a day → return 0 for that day (strict & safe)
 //       - If unlock gate is MISSING → use SCREEN gate only (many OEMs omit keyguard events)
@@ -41,7 +41,10 @@ import android.os.Build
 import android.os.Process
 import android.provider.Settings
 import android.util.Log
-import io.flutter.embedding.android.FlutterActivity
+// ✅ CHANGED: We now import FlutterFragmentActivity instead of the basic FlutterActivity.
+// This is required by the flutter_stripe package because it needs to display its own
+// native UI components (Fragments) for the payment sheet.
+import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 import java.io.ByteArrayOutputStream
@@ -53,7 +56,10 @@ import java.util.TimeZone
 import kotlin.math.max
 import kotlin.math.min
 
-class MainActivity : FlutterActivity() {
+// ✅ CHANGED: The MainActivity class now extends FlutterFragmentActivity.
+// This provides the necessary capabilities for plugins like flutter_stripe to function correctly.
+// All of your existing screen time logic within this class remains completely unaffected by this change.
+class MainActivity : FlutterFragmentActivity() {
 
     private val CHANNEL = "com.screenpledge.app/screentime"
     private val LOG_TAG = "ScreenPledgeNative"
@@ -138,6 +144,25 @@ class MainActivity : FlutterActivity() {
             add(Calendar.DAY_OF_YEAR, -6)
         }
         for (i in 0..6) {
+            val s = (start.clone() as Calendar).apply { add(Calendar.DAY_OF_YEAR, i) }
+            val e = (s.clone() as Calendar).apply { add(Calendar.DAY_OF_YEAR, 1) }
+            out.add(s.timeInMillis to e.timeInMillis)
+        }
+        return out
+    }
+
+    // ✅ ADDED: A new helper to get the specific time range for the last 6 *full* days.
+    /** Return 6 local day windows for the past 6 days, EXCLUDING today. */
+    private fun last6CompletedLocalDays(): List<Pair<Long, Long>> {
+        val tz = TimeZone.getDefault()
+        val out = ArrayList<Pair<Long, Long>>(6)
+        // Start from yesterday.
+        val start = Calendar.getInstance(tz).apply {
+            set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
+            add(Calendar.DAY_OF_YEAR, -6) // Start 6 days before today
+        }
+        for (i in 0..5) { // Loop 6 times
             val s = (start.clone() as Calendar).apply { add(Calendar.DAY_OF_YEAR, i) }
             val e = (s.clone() as Calendar).apply { add(Calendar.DAY_OF_YEAR, 1) }
             out.add(s.timeInMillis to e.timeInMillis)
@@ -423,9 +448,24 @@ class MainActivity : FlutterActivity() {
                         }
                         result.success(getUsageForDateRangeBucketed(start, end))
                     }
+                    "getScreenTimeForLastSixDays" -> {
+                        result.success(getScreenTimeForLastSixDays())
+                    }
+
                     // ✅ ADDED: The new handler for the daily breakdown.
                     "getDailyUsageBreakdown" -> {
                         result.success(getDailyUsageBreakdown())
+                    }
+                    // ✅ NEW: Add the handler for our new method.
+                    "getTotalUsageForDate" -> {
+                        // Get the date from the arguments sent by Flutter.
+                        val dateMillis = call.argument<Long>("date")
+                        if (dateMillis == null) {
+                            result.error("INVALID_ARGUMENT", "date argument is missing or not a Long.", null)
+                            return@setMethodCallHandler
+                        }
+                        // Call our new Kotlin function and return the result.
+                        result.success(getTotalUsageForDate(dateMillis))
                     }
                     else -> result.notImplemented()
                 }
@@ -439,6 +479,50 @@ class MainActivity : FlutterActivity() {
     // =============================================================================================
     // 📅 Weekly (strict) and Today (strict)
     // =============================================================================================
+
+    // ✅ NEW: The private Kotlin function that implements the logic for our new method.
+    /**
+     * Calculates the strict, gated device total for a specific historical day.
+     * @param dateMillis The timestamp (any point during the target day) from Flutter.
+     * @return The total usage in milliseconds for that entire day.
+     */
+    private fun getTotalUsageForDate(dateMillis: Long): Long {
+        // Use the provided timestamp to construct a Calendar instance for the target day.
+        val tz = TimeZone.getDefault()
+        val cal = Calendar.getInstance(tz).apply { timeInMillis = dateMillis }
+
+        // Calculate the exact start of that day (00:00:00).
+        cal.set(Calendar.HOUR_OF_DAY, 0)
+        cal.set(Calendar.MINUTE, 0)
+        cal.set(Calendar.SECOND, 0)
+        cal.set(Calendar.MILLISECOND, 0)
+        val dayStart = cal.timeInMillis
+
+        // Calculate the exact end of that day (the start of the next day).
+        cal.add(Calendar.DAY_OF_YEAR, 1)
+        val dayEnd = cal.timeInMillis
+
+        // Reuse our existing, robust buildRangeUsage function to get the total.
+        val total = buildRangeUsage(dayStart, dayEnd).deviceTotal
+        Log.d(LOG_TAG, "getTotalUsageForDate (strict) for ${Date(dayStart)} = $total ms")
+
+        // Hard-cap the result to 24 hours for safety and return it.
+        return min(total, 24L * 60L * 60L * 1000L)
+    }
+
+    // ✅ ADDED: The new public method that will be called by Flutter.
+    /** Last 6 full days, strict, hard‑capped to 24h each. Returns a simple list of durations. */
+    private fun getScreenTimeForLastSixDays(): List<Long> {
+        val out = ArrayList<Long>(6)
+        for ((lo, hi) in last6CompletedLocalDays()) {
+            val usage = buildRangeUsage(lo, hi).deviceTotal
+            val dayTotal = min(usage, 24L * 60L * 60L * 1000L)
+            out.add(dayTotal)
+            Log.d(LOG_TAG, "Daily strict total for ${Date(lo)} = ${dayTotal}ms")
+        }
+        Log.d(LOG_TAG, "getScreenTimeForLastSixDays -> $out")
+        return out
+    }
 
     /** Last 7 days, strict, hard‑capped to 24h each. Keys: yyyy‑MM‑dd (local). */
     private fun getWeeklyDeviceScreenTime(): Map<String, Long> {

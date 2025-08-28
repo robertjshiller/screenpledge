@@ -19,11 +19,11 @@ The immediate next steps are focused on implementing the critical financial and 
 
 #### **✅ `onboarding_pre` (Pre-Subscription Funnel)**
 
-*   **Status:** 90% Complete
+*   **Status:** 100% Complete
 *   **Components:**
     *   ✅ **Get Started Page:** UI Complete.
     *   ✅ **Permission Page:** **Complete & Robust.**
-    *   🟡 **Data Reveal Sequence:** UI is complete, but the data pipeline to feed it the calculated lifetime usage from the `ScreenTimeService` still needs to be built.
+    *   ✅ **Data Reveal Sequence:** **Complete & Robust.** The entire sequence is now fed by a live data pipeline, calculating and displaying personalized, dynamic statistics.
     *   ✅ **Static Pages (Solution, How It Works, Primer):** UI Complete.
     *   ✅ **Subscription Flow (Offer & Explained Pages):** **Complete.**
 
@@ -37,7 +37,7 @@ The immediate next steps are focused on implementing the critical financial and 
     *   ✅ **User Survey Page:** **Complete.**
     *   ✅ **Goal Setting Page:** **Complete.**
     *   ✅ **App Selection Page:** **Complete.**
-    *   🟡 **Pledge Page:** **Partially Implemented.** The UI, "Goal Review" component, and confirmation modal are complete. The logic to call the `commit_onboarding_goal` RPC is in place. The critical **Stripe payment integration is missing.**
+    *   ✅ **Pledge Page:** **Complete** Stripe integration complete we have details saved. 
 
 #### **✅ `dashboard` (Core Application MVP)**
 
@@ -94,12 +94,3 @@ This is the logical order of operations to complete the MVP.
     1.  **Logic:** In the `AuthGate`, query for unacknowledged `daily_results` on app startup.
     2.  **UI:** Build the `SuccessModal` and `FailureModal` widgets.
     3.  **Flow:** Display the appropriate modal if an unacknowledged result is found and update the `acknowledged_at` timestamp on dismissal.
-
-#### **Priority 5: Connect the `DataRevealSequence` Data Pipeline**
-
-*   **Feature:** `onboarding_pre`
-*   **Why:** A high-impact "polish" item to make onboarding more compelling.
-*   **Plan:**
-    1.  Create a `DataRevealViewModel`.
-    2.  Use the `ScreenTimeService` to fetch and calculate the lifetime usage stats.
-    3.  Update the `DataRevealSequence` UI to display this live data.

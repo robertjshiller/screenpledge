@@ -1,5 +1,6 @@
 // lib/core/data/repositories/profile_repository_impl.dart
 
+// Original comments are retained.
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:screenpledge/core/data/datasources/user_remote_data_source.dart';
 import 'package:screenpledge/core/domain/entities/profile.dart';
@@ -21,7 +22,11 @@ class ProfileRepositoryImpl implements IProfileRepository {
         throw const AuthException('No authenticated user found.');
       }
       final rawProfileData = await _remoteDataSource.getProfile(userId);
-      final profile = Profile.fromJson(rawProfileData);
+      // ✅ FIX: Changed the method call from Profile.fromJson() to Profile.fromMap().
+      // This aligns with the updated Profile entity, which now uses fromMap() to
+      // deserialize data from a Map (like the one we get from Supabase) and
+      // reserves fromJson() for deserializing from a raw JSON string.
+      final profile = Profile.fromMap(rawProfileData);
       return profile;
     } catch (e) {
       rethrow;
@@ -39,6 +44,27 @@ class ProfileRepositoryImpl implements IProfileRepository {
         params: {'draft_goal_data': draftGoal},
       );
     } catch (e) {
+      rethrow;
+    }
+  }
+
+  // ✅ NEW: The concrete implementation for creating the Stripe Setup Intent.
+  @override
+  Future<String> createStripeSetupIntent() async {
+    try {
+      // Invoke the Supabase Edge Function we created.
+      final response = await _supabaseClient.functions.invoke('create-stripe-setup-intent');
+
+      // Check for errors from the function response.
+      if (response.data == null || response.data['error'] != null) {
+        throw Exception(response.data?['error'] ?? 'Failed to create setup intent.');
+      }
+
+      // Extract the client_secret from the successful response and return it.
+      final clientSecret = response.data['client_secret'] as String;
+      return clientSecret;
+    } catch (e) {
+      // Rethrow the error to be handled by the ViewModel.
       rethrow;
     }
   }
