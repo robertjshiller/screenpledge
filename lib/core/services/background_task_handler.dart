@@ -1,6 +1,8 @@
 // lib/core/services/background_task_handler.dart
 
-// ✅ FIX: Removed unused imports for 'dart:math' and 'dart:ui'.
+// ✅ NEW: Import dart:ui to access the DartPluginRegistrant.
+import 'dart:ui';
+import 'package:flutter/widgets.dart';
 import 'package:intl/intl.dart';
 import 'package:screenpledge/core/data/repositories/cache_repository_impl.dart';
 import 'package:screenpledge/core/domain/repositories/cache_repository.dart';
@@ -19,18 +21,51 @@ const warningNotificationTask = "com.screenpledge.app.warningNotificationTask";
 // --- Top-Level Dispatcher ---
 @pragma('vm:entry-point')
 void callbackDispatcher() {
+  // This is the entry point for all background tasks.
   Workmanager().executeTask((task, inputData) async {
-    switch (task) {
-      case dailyDataSubmissionTask:
-        final handler = DailyDataSubmissionHandler();
-        return await handler.submitDailyData();
-      case warningNotificationTask:
-        final handler = WarningNotificationHandler();
-        return await handler.runWarningChecks();
-      default:
-        return true;
+    // ✅ THE DEFINITIVE FIX: This initialization block runs EVERY time a background
+    // task is started. It prepares the clean background isolate with all the
+    // necessary services before our logic runs.
+
+    // 1. Ensure basic Flutter bindings are ready.
+    WidgetsFlutterBinding.ensureInitialized();
+    // 2. This is the key to fixing the MissingPluginException. It finds and
+    //    registers all plugins (including our custom MethodChannel) for this isolate.
+    DartPluginRegistrant.ensureInitialized();
+    // 3. Initialize Supabase and dotenv for this isolate.
+    await _initializeSupabaseForBackground();
+    // 4. Initialize the NotificationService for this isolate.
+    await NotificationService.initialize();
+
+    // Now that the environment is ready, we can safely delegate to the handlers.
+    try {
+      switch (task) {
+        case dailyDataSubmissionTask:
+          final handler = DailyDataSubmissionHandler();
+          return await handler.submitDailyData();
+        case warningNotificationTask:
+          final handler = WarningNotificationHandler();
+          return await handler.runWarningChecks();
+        default:
+          return true;
+      }
+    } catch (e) {
+      print('Unhandled error in callbackDispatcher: $e');
+      return false;
     }
   });
+}
+
+/// A shared, top-level function to initialize Supabase in the background.
+Future<void> _initializeSupabaseForBackground() async {
+  await dotenv.load(fileName: ".env");
+  // Check if an instance already exists to prevent re-initialization errors.
+  if (Supabase.instance.client.auth.currentUser == null) {
+    await Supabase.initialize(
+      url: dotenv.env['SUPABASE_URL']!,
+      anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
+    );
+  }
 }
 
 // =============================================================================
@@ -42,7 +77,7 @@ class DailyDataSubmissionHandler {
 
   Future<bool> submitDailyData() async {
     try {
-      await _initializeSupabase();
+      // Initialization is now handled globally in the dispatcher.
       final currentUser = Supabase.instance.client.auth.currentUser;
       if (currentUser == null) return true;
 
@@ -68,19 +103,8 @@ class DailyDataSubmissionHandler {
       await prefs.setString(_lastSubmissionDateKey, yesterdayDateString);
       return true;
     } catch (e) {
-      // Using print in a background task is acceptable for debugging.
       print('BackgroundTask (Submit): Failed. Error: $e');
       return false;
-    }
-  }
-
-  Future<void> _initializeSupabase() async {
-    await dotenv.load(fileName: ".env");
-    if (Supabase.instance.client.auth.currentUser == null) {
-      await Supabase.initialize(
-        url: dotenv.env['SUPABASE_URL']!,
-        anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
-      );
     }
   }
 }
@@ -95,6 +119,7 @@ class WarningNotificationHandler {
 
   Future<bool> runWarningChecks() async {
     try {
+      // Initialization is now handled globally.
       final ICacheRepository cache = CacheRepositoryImpl();
       final ScreenTimeService screenTimeService = AndroidScreenTimeService();
       final prefs = await SharedPreferences.getInstance();
@@ -110,6 +135,7 @@ class WarningNotificationHandler {
       if (goal == null) return true;
 
       final goalLimitSeconds = goal.timeLimit.inSeconds;
+      // This call will now succeed because the MethodChannel is registered.
       final currentUsage = await screenTimeService.getTotalDeviceUsage();
       final currentUsageSeconds = currentUsage.inSeconds;
       final lastNotifiedThreshold = prefs.getDouble(_lastNotifiedThresholdKey) ?? 0.0;
@@ -120,18 +146,10 @@ class WarningNotificationHandler {
       for (final entry in thresholds.entries) {
         final thresholdPercent = entry.key;
         if (currentUsageSeconds >= (goalLimitSeconds * thresholdPercent) && lastNotifiedThreshold < thresholdPercent) {
-          if (thresholdPercent == 0.50) {
-            await NotificationService.show50PercentWarning();
-          }
-          if (thresholdPercent == 0.75) {
-            await NotificationService.show75PercentWarning();
-          }
-          if (thresholdPercent == 0.90) {
-            await NotificationService.show90PercentWarning();
-          }
-          if (thresholdPercent == 1.00) {
-            await NotificationService.showFailureConfirmation();
-          }
+          if (thresholdPercent == 0.50) await NotificationService.show50PercentWarning();
+          if (thresholdPercent == 0.75) await NotificationService.show75PercentWarning();
+          if (thresholdPercent == 0.90) await NotificationService.show90PercentWarning();
+          if (thresholdPercent == 1.00) await NotificationService.showFailureConfirmation();
           newThresholdToStore = thresholdPercent;
         }
       }
@@ -143,13 +161,9 @@ class WarningNotificationHandler {
       if (newThresholdToStore >= 1.0) return true;
 
       double nextMilestonePercent = 0.5;
-      if (newThresholdToStore >= 0.90) {
-        nextMilestonePercent = 1.0;
-      } else if (newThresholdToStore >= 0.75) {
-        nextMilestonePercent = 0.90;
-      } else if (newThresholdToStore >= 0.50) {
-        nextMilestonePercent = 0.75;
-      }
+      if (newThresholdToStore >= 0.90) nextMilestonePercent = 1.0;
+      else if (newThresholdToStore >= 0.75) nextMilestonePercent = 0.90;
+      else if (newThresholdToStore >= 0.50) nextMilestonePercent = 0.75;
 
       final targetUsageSeconds = goalLimitSeconds * nextMilestonePercent;
       final secondsToNextMilestone = targetUsageSeconds - currentUsageSeconds;
@@ -163,21 +177,18 @@ class WarningNotificationHandler {
 
       const minDelay = Duration(minutes: 5);
       const maxDelay = Duration(minutes: 30);
-      if (nextCheckDelay < minDelay) {
-        nextCheckDelay = minDelay;
-      }
-      if (nextCheckDelay > maxDelay) {
-        nextCheckDelay = maxDelay;
-      }
+      if (nextCheckDelay < minDelay) nextCheckDelay = minDelay;
+      if (nextCheckDelay > maxDelay) nextCheckDelay = maxDelay;
 
+      // This call will now succeed because Workmanager was initialized in the dispatcher.
       Workmanager().registerOneOffTask(
         "warningNotificationTask-${DateTime.now().millisecondsSinceEpoch}",
         warningNotificationTask,
         initialDelay: nextCheckDelay,
         existingWorkPolicy: ExistingWorkPolicy.replace,
-        // ✅ FIX: The enum member `not_required` has been renamed to `notRequired`.
         constraints: Constraints(networkType: NetworkType.notRequired),
       );
+      print('BackgroundTask (Warning): Next check scheduled in ${nextCheckDelay.inMinutes} minutes.');
 
       return true;
     } catch (e) {

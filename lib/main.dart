@@ -2,6 +2,8 @@
 
 // Original comments are retained and updated.
 import 'package:flutter/material.dart';
+// ✅ NEW: Import the DartPluginRegistrant.
+import 'dart:ui';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:screenpledge/core/config/theme/app_theme.dart';
 import 'package:screenpledge/features/auth/presentation/views/auth_gate.dart';
@@ -17,6 +19,13 @@ import 'package:screenpledge/core/services/notification_service.dart';
 @pragma('vm:entry-point')
 void callbackDispatcher() {
   Workmanager().executeTask((task, inputData) async {
+    // ✅ THE DEFINITIVE FIX: This line is the key to solving the MissingPluginException.
+    // As per official Flutter guidance for background isolates, this function
+    // automatically finds and initializes all the necessary plugin bindings
+    // (like our MethodChannel) for this background context.
+    DartPluginRegistrant.ensureInitialized();
+
+    // The rest of the dispatcher logic remains the same.
     switch (task) {
       case dailyDataSubmissionTask:
         final handler = DailyDataSubmissionHandler();
