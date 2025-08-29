@@ -2,23 +2,33 @@
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:screenpledge/features/onboarding_post/di/user_survey_providers.dart';
-// ✅ CHANGED: Import the new use case.
 import 'package:screenpledge/features/onboarding_post/domain/usecases/submit_user_survey.dart';
 
 /// Manages the state and business logic for the User Survey page.
 class UserSurveyViewModel extends StateNotifier<AsyncValue<void>> {
-  // ✅ CHANGED: The dependency is now the new use case.
   final SubmitUserSurveyUseCase _submitUserSurveyUseCase;
 
   UserSurveyViewModel(this._submitUserSurveyUseCase) : super(const AsyncValue.data(null));
 
-  /// Attempts to save the user's survey answers to the backend.
+  /// Attempts to save the user's survey answers and display name to the backend.
+  ///
+  /// ✅ CHANGED: This method now requires the displayName and a map of survey answers.
+  /// It passes these to the use case, which will handle the RPC call.
+  ///
   /// Returns `true` on success, `false` on failure.
-  Future<bool> submitSurvey(Map<String, String?> answers) async {
+  Future<bool> submitSurvey({
+    required String displayName,
+    required Map<String, String?> answers,
+  }) async {
     state = const AsyncValue.loading();
     try {
-      // ✅ CHANGED: Call the new use case.
-      await _submitUserSurveyUseCase(answers);
+      // ✅ CHANGED: Call the use case with both the display name and the answers.
+      // We create a new map and add the display name to it before passing it along.
+      final fullPayload = {
+        ...answers,
+        'display_name': displayName,
+      };
+      await _submitUserSurveyUseCase(fullPayload);
       state = const AsyncValue.data(null);
       return true;
     } catch (e, st) {
@@ -32,7 +42,7 @@ class UserSurveyViewModel extends StateNotifier<AsyncValue<void>> {
 final userSurveyViewModelProvider =
     StateNotifierProvider.autoDispose<UserSurveyViewModel, AsyncValue<void>>(
   (ref) {
-    // ✅ CHANGED: The provider now reads the new use case provider.
+    // The provider's dependency remains the same.
     return UserSurveyViewModel(ref.read(submitUserSurveyUseCaseProvider));
   },
 );

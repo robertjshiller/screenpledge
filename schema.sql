@@ -8,7 +8,7 @@
 
 CREATE TYPE public.pledge_status AS ENUM ('inactive', 'active', 'paused');
 CREATE TYPE public.goal_type AS ENUM ('total_time', 'custom_group');
-CREATE TYPE public.goal_status AS ENUM ('active', 'inactive', 'paused');
+CREATE TYPE public.goal_status AS ENUM ('active', 'inactive', 'paused', 'pending');
 CREATE TYPE public.daily_outcome AS ENUM ('success', 'failure', 'paused', 'forgiven', 'pending_reconciliation');
 CREATE TYPE public.reward_type AS ENUM ('gift_card', 'discount', 'free_trial', 'donation', 'subscription', 'theme');
 CREATE TYPE public.reward_tier AS ENUM ('bronze', 'silver', 'gold', 'platinum');
@@ -21,7 +21,7 @@ CREATE TYPE public.reward_tier AS ENUM ('bronze', 'silver', 'gold', 'platinum');
 CREATE TABLE public.profiles (
   id uuid NOT NULL PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   email text,
-  full_name text,
+  display_name text,
   pledge_points integer NOT NULL DEFAULT 0,
   lifetime_pledge_points integer NOT NULL DEFAULT 0,
   streak_count integer NOT NULL DEFAULT 0,

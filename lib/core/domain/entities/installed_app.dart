@@ -1,3 +1,5 @@
+//lib/core/domain/entities/installed_app.dart
+
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 

@@ -9,7 +9,6 @@ import 'package:screenpledge/core/domain/repositories/profile_repository.dart';
 import 'package:screenpledge/core/di/auth_providers.dart';
 import 'package:screenpledge/core/domain/usecases/save_goal_and_continue.dart';
 import 'package:screenpledge/core/domain/usecases/create_stripe_setup_intent.dart';
-// ✅ NEW: Import the cache repository contract and implementation.
 import 'package:screenpledge/core/data/repositories/cache_repository_impl.dart';
 import 'package:screenpledge/core/domain/repositories/cache_repository.dart';
 
@@ -23,26 +22,25 @@ final userRemoteDataSourceProvider = Provider<UserRemoteDataSource>((ref) {
   return UserRemoteDataSource(supabaseClient);
 });
 
+/// ✅ REFACTORED: The ProfileRepository provider now also depends on the ICacheRepository.
 final profileRepositoryProvider = Provider<IProfileRepository>((ref) {
   final remoteDataSource = ref.watch(userRemoteDataSourceProvider);
   final supabaseClient = ref.watch(supabaseClientProvider);
-  return ProfileRepositoryImpl(remoteDataSource, supabaseClient);
+  // Watch our cache repository provider.
+  final cacheRepository = ref.watch(cacheRepositoryProvider);
+  // Inject all three dependencies.
+  return ProfileRepositoryImpl(remoteDataSource, supabaseClient, cacheRepository);
 });
 
 
-// ✅ NEW: A dedicated section for our caching layer.
 // --- DATA LAYER (CACHE) ---
 
 /// Provider for our concrete implementation of the cache repository.
-/// This is kept private as other parts of the app should depend on the abstraction.
 final _cacheRepositoryImplProvider = Provider<CacheRepositoryImpl>((ref) {
   return CacheRepositoryImpl();
 });
 
 /// The public provider for the cache repository contract [ICacheRepository].
-///
-/// Other layers of the app (ViewModels, UseCases) will watch this provider
-/// to get the cache repository, keeping them decoupled from the concrete implementation.
 final cacheRepositoryProvider = Provider<ICacheRepository>((ref) {
   return ref.watch(_cacheRepositoryImplProvider);
 });
@@ -64,13 +62,20 @@ final createStripeSetupIntentUseCaseProvider = Provider<CreateStripeSetupIntentU
 
 
 // --- PRESENTATION LAYER (or for UI consumption) ---
-final myProfileProvider = FutureProvider<Profile?>((ref) async {
-  final authState = ref.watch(authStateChangesProvider);
-  if (authState is! AsyncData || authState.value == null) {
+
+/// ✅ REFACTORED: The myProfileProvider now correctly uses the offline-first repository.
+/// It no longer needs to check the auth state itself, as that logic is now
+/// encapsulated within the repository's getMyProfile method.
+final myProfileProvider = FutureProvider<Profile?>((ref) {
+  // Simply watch the repository provider.
+  final profileRepository = ref.watch(profileRepositoryProvider);
+  // The getMyProfile method will handle everything: loading from cache,
+  // syncing in the background, and returning the most up-to-date profile.
+  try {
+    return profileRepository.getMyProfile();
+  } catch (e) {
+    // If the repository throws (e.g., user is offline and cache is empty),
+    // the FutureProvider will automatically be in an error state, which the UI can handle.
     return null;
   }
-  final profileRepository = ref.watch(profileRepositoryProvider);
-  // NOTE: In a future step, we will refactor this provider to use our
-  // new cache repository for an offline-first experience.
-  return await profileRepository.getMyProfile();
 });

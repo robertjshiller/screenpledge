@@ -7,73 +7,70 @@ import 'package:screenpledge/core/di/goal_providers.dart';
 import 'package:screenpledge/core/di/profile_providers.dart';
 import 'package:screenpledge/core/domain/usecases/commit_onboarding_goal.dart';
 import 'package:screenpledge/core/domain/usecases/create_stripe_setup_intent.dart';
-// ✅ NEW: Import the Goal entity to construct our cached goal.
 import 'package:screenpledge/core/domain/entities/goal.dart';
-// ✅ NEW: Import the cache repository contract.
 import 'package:screenpledge/core/domain/repositories/cache_repository.dart';
 
 /// Manages the state and business logic for the PledgePage.
 class PledgeViewModel extends StateNotifier<AsyncValue<void>> {
   final CommitOnboardingGoalUseCase _commitOnboardingGoalUseCase;
   final CreateStripeSetupIntentUseCase _createStripeSetupIntentUseCase;
-  // ✅ NEW: Add a dependency for our cache repository.
   final ICacheRepository _cacheRepository;
-  // ✅ NEW: Add a dependency to read the user's draft goal from their profile.
   final Ref _ref;
 
   PledgeViewModel(
     this._commitOnboardingGoalUseCase,
     this._createStripeSetupIntentUseCase,
-    // ✅ NEW: Inject the new dependencies via the constructor.
     this._cacheRepository,
     this._ref,
   ) : super(const AsyncValue.data(null));
 
-  /// It orchestrates the entire pledge activation flow:
-  /// 1. Fetches a client secret from our backend.
-  /// 2. Presents the Stripe payment sheet to the user.
-  /// 3. If successful, calls the original `activatePledge` to finalize in our DB and cache.
+  /// Orchestrates the entire pledge activation flow.
   Future<void> savePaymentMethodAndActivatePledge({required int amountCents}) async {
     state = const AsyncValue.loading();
     try {
-      // 1. Fetch the client secret from our Supabase Edge Function.
-      final clientSecret = await _createStripeSetupIntentUseCase();
+      // ✅ REFACTORED: Construct the goal object BEFORE any async operations.
+      // This makes our flow more resilient. We now have the goal data in memory
+      // before we call the RPC that will clear the draft from the profile.
+      final goalToCommit = _getGoalFromDraft();
+      if (goalToCommit == null) {
+        throw Exception("Could not create goal from draft. Draft data is missing.");
+      }
 
-      // 2. Initialize the Stripe payment sheet with the secret.
+      final clientSecret = await _createStripeSetupIntentUseCase();
       await Stripe.instance.initPaymentSheet(
         paymentSheetParameters: SetupPaymentSheetParameters(
           merchantDisplayName: 'ScreenPledge',
           setupIntentClientSecret: clientSecret,
         ),
       );
-
-      // 3. Present the payment sheet to the user.
       await Stripe.instance.presentPaymentSheet();
 
-      // 4. If successful, finalize the pledge.
-      await activatePledge(amountCents: amountCents);
+      // Pass the fully constructed goal object to the final activation method.
+      await activatePledge(amountCents: amountCents, goalToCache: goalToCommit);
 
     } on StripeException catch (e) {
-      // Handle Stripe errors.
       if (e.error.code != FailureCode.Canceled) {
         state = AsyncValue.error('Payment failed: ${e.error.message}', StackTrace.current);
       } else {
         state = const AsyncValue.data(null);
       }
     } catch (e, st) {
-      // Handle any other errors.
       state = AsyncValue.error(e, st);
     }
   }
 
-  /// This function now handles the database commit AND the local caching.
-  Future<void> activatePledge({required int amountCents}) async {
+  /// Handles the database commit and local caching.
+  Future<void> activatePledge({
+    required int amountCents,
+    required Goal goalToCache,
+  }) async {
     try {
       // Call the use case to save the goal to the Supabase database.
       await _commitOnboardingGoalUseCase(pledgeAmountCents: amountCents);
 
-      // ✅ NEW: After the server call is successful, save the goal to the local cache.
-      await _cacheActiveGoal();
+      // ✅ REFACTORED: The caching logic is now much simpler.
+      // It receives the already-constructed Goal object and saves it.
+      await _cacheRepository.saveActiveGoal(goalToCache);
 
       state = const AsyncValue.data(null);
     } catch (e, st) {
@@ -86,11 +83,17 @@ class PledgeViewModel extends StateNotifier<AsyncValue<void>> {
   Future<void> skipPledge() async {
     state = const AsyncValue.loading();
     try {
+      // ✅ REFACTORED: Construct the goal object first, just like in the pledge flow.
+      final goalToCommit = _getGoalFromDraft();
+      if (goalToCommit == null) {
+        throw Exception("Could not create goal from draft. Draft data is missing.");
+      }
+
       // Call the use case to save the goal to Supabase without a pledge.
       await _commitOnboardingGoalUseCase();
 
-      // ✅ NEW: Also cache the goal locally when the user skips.
-      await _cacheActiveGoal();
+      // Also cache the goal locally when the user skips.
+      await _cacheRepository.saveActiveGoal(goalToCommit);
 
       state = const AsyncValue.data(null);
     } catch (e, st) {
@@ -98,31 +101,30 @@ class PledgeViewModel extends StateNotifier<AsyncValue<void>> {
     }
   }
 
-  // ✅ NEW: A private helper method to handle the caching logic.
-  /// This reads the user's draft goal from their profile state and saves it
-  /// to the local cache as the new active goal.
-  Future<void> _cacheActiveGoal() async {
-    // Read the current profile state to access the draft goal data.
+  /// ✅ REFACTORED: This helper method now CONSTRUCTS and RETURNS a Goal object.
+  /// It no longer performs the caching itself. This separates the responsibility
+  /// of data creation from data saving.
+  Goal? _getGoalFromDraft() {
     final profile = _ref.read(myProfileProvider).value;
     final draftGoalData = profile?.onboardingDraftGoal;
 
     if (draftGoalData != null) {
-      // Construct a Goal entity from the draft data.
-      // This will be the goal that becomes active at midnight.
-      final goalToCache = Goal(
-        goalType: GoalType.values.byName(draftGoalData['goalType']),
-        timeLimit: Duration(seconds: draftGoalData['timeLimit']),
-        // The background task doesn't need the app lists, so we can use empty sets.
-        trackedApps: const {},
-        exemptApps: const {},
-        // The goal becomes effective now, but the "Next Day Rule" is enforced by
-        // the server and the daily reset logic.
-        effectiveAt: DateTime.now(),
+      final goalTypeString = draftGoalData['goalType'] as String;
+      final camelCaseGoalType = goalTypeString.replaceAllMapped(
+        RegExp(r'_([a-z])'),
+        (match) => match.group(1)!.toUpperCase(),
       );
 
-      // Use the cache repository to save the newly created goal.
-      await _cacheRepository.saveActiveGoal(goalToCache);
+      return Goal(
+        goalType: GoalType.values.byName(camelCaseGoalType),
+        timeLimit: Duration(seconds: draftGoalData['timeLimit']),
+        trackedApps: const {},
+        exemptApps: const {},
+        effectiveAt: DateTime.now(),
+      );
     }
+    // Return null if no draft goal data is found.
+    return null;
   }
 }
 
@@ -132,15 +134,13 @@ final pledgeViewModelProvider =
   (ref) {
     final commitOnboardingGoalUseCase = ref.watch(commitOnboardingGoalUseCaseProvider);
     final createStripeSetupIntentUseCase = ref.watch(createStripeSetupIntentUseCaseProvider);
-    // ✅ NEW: Watch the provider for our new cache repository.
     final cacheRepository = ref.watch(cacheRepositoryProvider);
     
-    // ✅ NEW: Pass the cache repository and the ref itself to the ViewModel's constructor.
     return PledgeViewModel(
       commitOnboardingGoalUseCase,
       createStripeSetupIntentUseCase,
       cacheRepository,
-      ref, // Pass ref so the ViewModel can read other providers.
+      ref,
     );
   },
 );

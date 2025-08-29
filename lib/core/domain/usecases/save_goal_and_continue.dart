@@ -16,8 +16,12 @@ class SaveGoalAndContinueUseCase {
     final draftGoalJson = {
       'goalType': draftGoal.goalType == GoalType.totalTime ? 'total_time' : 'custom_group',
       'timeLimit': draftGoal.timeLimit.inSeconds,
-      'exemptApps': draftGoal.exemptApps.map((app) => app.toJson()).toList(),
-      'trackedApps': draftGoal.trackedApps.map((app) => app.toJson()).toList(),
+      
+      // ✅ FIX: The server RPC expects a simple list of package name strings for the
+      // exempt and tracked apps, not a complex list of JSON objects.
+      // We now map the Set<InstalledApp> to a List<String> containing only the package names.
+      'exemptApps': draftGoal.exemptApps.map((app) => app.packageName).toList(),
+      'trackedApps': draftGoal.trackedApps.map((app) => app.packageName).toList(),
     };
     
     // Call the repository method that invokes the atomic RPC.

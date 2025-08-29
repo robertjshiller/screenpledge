@@ -9,8 +9,10 @@ import 'package:screenpledge/core/domain/usecases/save_goal_and_continue.dart';
 /// Manages the state and business logic for the GoalSettingPage.
 class GoalSettingViewModel extends StateNotifier<AsyncValue<void>> {
   final SaveGoalAndContinueUseCase _saveGoalAndContinueUseCase;
+  final Ref _ref;
 
-  GoalSettingViewModel(this._saveGoalAndContinueUseCase) : super(const AsyncValue.data(null));
+  GoalSettingViewModel(this._saveGoalAndContinueUseCase, this._ref)
+      : super(const AsyncValue.data(null));
 
   /// Saves the user's goal configuration as a "draft" in their
   /// profile and marks the goal setup step of onboarding as complete in a single
@@ -23,22 +25,31 @@ class GoalSettingViewModel extends StateNotifier<AsyncValue<void>> {
   }) async {
     state = const AsyncValue.loading();
 
-    // Create the pure domain entity from the UI data. This is the "draft goal".
-    // ✅ FIXED: Added the new, required `effectiveAt` field.
-    // For a new goal created during onboarding, this should be the current time.
-    // We also explicitly set `endedAt` to null for clarity.
     final draftGoal = Goal(
       goalType: isTotalTime ? GoalType.totalTime : GoalType.customGroup,
       timeLimit: timeLimit,
       exemptApps: exemptApps,
       trackedApps: trackedApps,
-      effectiveAt: DateTime.now(), // This is the required value.
+      effectiveAt: DateTime.now(),
       endedAt: null,
     );
 
     try {
-      // Execute the use case to save the draft and update the flag via the RPC.
+      // Execute the use case to save the draft to the Supabase database.
       await _saveGoalAndContinueUseCase(draftGoal);
+
+      // ✅ THE DEFINITIVE FIX: Use `ref.refresh` and `await` it.
+      //
+      // `ref.invalidate()` simply marks the provider as dirty for a future rebuild.
+      // `ref.refresh()` immediately starts the refetch and returns a Future
+      // that completes only when the new data has been fetched.
+      //
+      // By `await`ing this, we explicitly pause execution here until the
+      // myProfileProvider has successfully re-fetched the profile from the
+      // server, guaranteeing that the `onboardingDraftGoal` is available
+      // before we navigate to the next page. This resolves the race condition.
+      await _ref.refresh(myProfileProvider.future);
+
       state = const AsyncValue.data(null);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
@@ -51,6 +62,6 @@ final goalSettingViewModelProvider =
     StateNotifierProvider.autoDispose<GoalSettingViewModel, AsyncValue<void>>(
   (ref) {
     final saveGoalAndContinueUseCase = ref.watch(saveGoalAndContinueUseCaseProvider);
-    return GoalSettingViewModel(saveGoalAndContinueUseCase);
+    return GoalSettingViewModel(saveGoalAndContinueUseCase, ref);
   },
 );

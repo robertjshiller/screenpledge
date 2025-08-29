@@ -19,8 +19,9 @@ class Profile {
   /// The user's email address. Can be null.
   final String? email;
 
-  /// The user's full name. Can be null.
-  final String? fullName;
+  /// ✅ CHANGED: The user's chosen display name or nickname. Can be null.
+  /// This is semantically more correct than 'fullName' for our use case.
+  final String? displayName;
 
   /// The current balance of Pledge Points (PP) the user can spend in the rewards marketplace.
   final int pledgePoints;
@@ -50,7 +51,7 @@ class Profile {
   /// A flag indicating completion of the initial pledge setup.
   final bool onboardingCompletedPledgeSetup;
 
-  // ✅ ADDED: A field to temporarily store the goal configuration during onboarding.
+  /// A field to temporarily store the goal configuration during onboarding.
   /// This makes the onboarding flow resilient to interruptions. It is populated
   /// on the GoalSettingPage and consumed on the PledgePage. It should be cleared
   /// after the final goal is created.
@@ -66,7 +67,8 @@ class Profile {
   const Profile({
     required this.id,
     this.email,
-    this.fullName,
+    // ✅ CHANGED: The constructor now accepts 'displayName'.
+    this.displayName,
     required this.pledgePoints,
     required this.lifetimePledgePoints,
     required this.streakCount,
@@ -76,7 +78,7 @@ class Profile {
     required this.onboardingCompletedSurvey,
     required this.onboardingCompletedGoalSetup,
     required this.onboardingCompletedPledgeSetup,
-    this.onboardingDraftGoal, // ✅ ADDED
+    this.onboardingDraftGoal,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -89,7 +91,8 @@ class Profile {
     return Profile(
       id: map['id'] as String,
       email: map['email'] as String?,
-      fullName: map['full_name'] as String?,
+      // ✅ CHANGED: Reads from the 'display_name' column in the database.
+      displayName: map['display_name'] as String?,
       pledgePoints: map['pledge_points'] as int,
       lifetimePledgePoints: map['lifetime_pledge_points'] as int,
       streakCount: map['streak_count'] as int,
@@ -107,18 +110,19 @@ class Profile {
     );
   }
 
-  /// ✅ NEW: Creates a [Profile] instance from a JSON string.
+  /// Creates a [Profile] instance from a JSON string.
   /// This is a convenience factory for deserializing data from SharedPreferences.
   factory Profile.fromJson(String source) =>
       Profile.fromMap(json.decode(source) as Map<String, dynamic>);
 
-  /// ✅ NEW: Converts the [Profile] instance into a map.
+  /// Converts the [Profile] instance into a map.
   /// This is the first step in serializing the object to a JSON string.
   Map<String, dynamic> toMap() {
     return {
       'id': id,
       'email': email,
-      'full_name': fullName,
+      // ✅ CHANGED: Writes to the 'display_name' key for serialization.
+      'display_name': displayName,
       'pledge_points': pledgePoints,
       'lifetime_pledge_points': lifetimePledgePoints,
       'streak_count': streakCount,
@@ -134,7 +138,7 @@ class Profile {
     };
   }
 
-  /// ✅ NEW: Converts the [Profile] instance into a JSON string.
+  /// Converts the [Profile] instance into a JSON string.
   /// This is used for saving the object to SharedPreferences.
   String toJson() => json.encode(toMap());
 

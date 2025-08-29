@@ -16,10 +16,16 @@ class NotificationService {
   /// Initializes the notification plugin with settings for Android and iOS.
   /// This should be called once when the app starts.
   static Future<void> initialize() async {
-    // Define the settings for Android. 'app_icon' refers to the default launcher icon.
-    // Ensure you have an `app_icon.png` in your `android/app/src/main/res/drawable` folder.
+    // ✅ CHANGED: The icon name has been changed from 'app_icon' to '@mipmap/ic_launcher'.
+    // '@mipmap/ic_launcher' is the default name for the app's main launcher icon
+    // that is created with every new Flutter project. Using it ensures that the
+    // notification plugin can always find a valid icon, preventing the app from crashing.
+    //
+    // ❗ TODO: For a production app, replace 'ic_launcher' with a custom-designed
+    // notification icon. This icon should be a simple, white-on-transparent PNG
+    // and be placed in the `android/app/src/main/res/drawable` folders.
     const AndroidInitializationSettings androidInitializationSettings =
-        AndroidInitializationSettings('app_icon');
+        AndroidInitializationSettings('@mipmap/ic_launcher');
 
     // Define the settings for iOS.
     const DarwinInitializationSettings darwinInitializationSettings =
@@ -99,6 +105,7 @@ class NotificationService {
     // Define the details for iOS notifications.
     const DarwinNotificationDetails darwinNotificationDetails =
         DarwinNotificationDetails();
+
 
     // Create the overall notification details object.
     const NotificationDetails notificationDetails = NotificationDetails(

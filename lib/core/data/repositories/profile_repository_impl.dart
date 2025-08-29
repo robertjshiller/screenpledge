@@ -1,43 +1,82 @@
 // lib/core/data/repositories/profile_repository_impl.dart
 
-// Original comments are retained.
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:screenpledge/core/data/datasources/user_remote_data_source.dart';
 import 'package:screenpledge/core/domain/entities/profile.dart';
+import 'package:screenpledge/core/domain/repositories/cache_repository.dart';
 import 'package:screenpledge/core/domain/repositories/profile_repository.dart';
 
-/// This is the concrete implementation of the [IProfileRepository] contract.
+/// ✅ REFACTORED: This is the offline-first implementation of the [IProfileRepository].
+///
+/// This class now orchestrates fetching the user's profile from both the local cache
+/// and the remote Supabase server.
 class ProfileRepositoryImpl implements IProfileRepository {
   final UserRemoteDataSource _remoteDataSource;
   final SupabaseClient _supabaseClient;
+  // ✅ NEW: Add a dependency on the cache repository contract.
+  final ICacheRepository _cacheRepository;
 
-  ProfileRepositoryImpl(this._remoteDataSource, this._supabaseClient);
+  ProfileRepositoryImpl(
+    this._remoteDataSource,
+    this._supabaseClient,
+    // ✅ NEW: Inject the cache repository.
+    this._cacheRepository,
+  );
 
-  /// Fetches the profile for the currently authenticated user.
+  /// Fetches the profile for the currently authenticated user using an offline-first strategy.
   @override
-  Future<Profile> getMyProfile() async {
+  Future<Profile> getMyProfile({bool forceRefresh = false}) async {
+    // This is the "Sync on Resume" pattern.
+
+    // --- Step 1: Immediately try to load from the cache for an instant UI. ---
+    if (!forceRefresh) {
+      final cachedProfile = await _cacheRepository.getProfile();
+      if (cachedProfile != null) {
+        // If we have a cached profile, return it immediately.
+        // Then, trigger a background sync to get the latest data.
+        // We don't await this, it runs in the background.
+        _fetchAndCacheFreshProfile();
+        return cachedProfile;
+      }
+    }
+
+    // --- Step 2: If cache is empty or a refresh is forced, fetch from network. ---
+    return await _fetchAndCacheFreshProfile();
+  }
+
+  /// A private helper method to handle the network fetching and caching logic for the profile.
+  Future<Profile> _fetchAndCacheFreshProfile() async {
     try {
       final userId = _supabaseClient.auth.currentUser?.id;
       if (userId == null) {
+        // If the user is logged out, clear any old cached profile and throw.
+        await _cacheRepository.clearProfile();
         throw const AuthException('No authenticated user found.');
       }
+
+      // --- Fetch fresh data from Supabase ---
       final rawProfileData = await _remoteDataSource.getProfile(userId);
-      // ✅ FIX: Changed the method call from Profile.fromJson() to Profile.fromMap().
-      // This aligns with the updated Profile entity, which now uses fromMap() to
-      // deserialize data from a Map (like the one we get from Supabase) and
-      // reserves fromJson() for deserializing from a raw JSON string.
-      final profile = Profile.fromMap(rawProfileData);
-      return profile;
+      final freshProfile = Profile.fromMap(rawProfileData);
+
+      // --- Cache the fresh data ---
+      await _cacheRepository.saveProfile(freshProfile);
+
+      return freshProfile;
     } catch (e) {
+      // If the network fails, try to fall back to the cache one last time.
+      final cachedProfile = await _cacheRepository.getProfile();
+      if (cachedProfile != null) return cachedProfile;
+      // If network fails AND cache is empty, we must throw the error.
       rethrow;
     }
   }
 
-  /// ✅ ADDED: The concrete implementation for saving the draft goal via an RPC.
+  /// The concrete implementation for saving the draft goal via an RPC.
+  /// This is a "write-through" operation and doesn't involve the cache directly.
   @override
   Future<void> saveOnboardingDraftGoal(Map<String, dynamic> draftGoal) async {
     try {
-      // This calls our new RPC, passing the draft goal data.
+      // This calls our RPC, passing the draft goal data.
       // The server-side function handles the atomic update.
       await _supabaseClient.rpc(
         'save_onboarding_goal_draft',
@@ -48,7 +87,8 @@ class ProfileRepositoryImpl implements IProfileRepository {
     }
   }
 
-  // ✅ NEW: The concrete implementation for creating the Stripe Setup Intent.
+  /// The concrete implementation for creating the Stripe Setup Intent.
+  /// This is a "write-through" operation.
   @override
   Future<String> createStripeSetupIntent() async {
     try {
