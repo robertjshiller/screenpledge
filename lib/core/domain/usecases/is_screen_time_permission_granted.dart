@@ -1,5 +1,5 @@
 import 'package:screenpledge/core/di/service_providers.dart';
-import 'package:screenpledge/core/services/screen_time_service.dart';
+import 'package:screen_time_channel/screen_time_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// A use case that checks if the usage permission has been granted.

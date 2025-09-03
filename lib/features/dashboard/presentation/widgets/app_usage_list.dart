@@ -2,7 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:screenpledge/core/config/theme/app_colors.dart';
-import 'package:screenpledge/core/domain/entities/app_usage_stat.dart';
+import 'package:screen_time_channel/app_usage_stat.dart';
 
 class AppUsageList extends StatelessWidget {
   final List<AppUsageStat> usageStats;

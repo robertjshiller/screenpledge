@@ -2,7 +2,7 @@
 
 import 'package:flutter/foundation.dart';
 import 'package:screenpledge/core/domain/entities/goal.dart';
-import 'package:screenpledge/core/domain/entities/installed_app.dart';
+import 'package:screen_time_channel/installed_app.dart';
 import 'package:screenpledge/core/domain/repositories/cache_repository.dart';
 import 'package:screenpledge/core/domain/repositories/goal_repository.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';

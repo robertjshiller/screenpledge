@@ -2,7 +2,7 @@
 
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
-import 'package:screenpledge/core/domain/entities/installed_app.dart';
+import 'package:screen_time_channel/installed_app.dart';
 
 /// Represents the type of goal the user can set.
 /// This mirrors the `goal_type` ENUM in the Supabase database schema.

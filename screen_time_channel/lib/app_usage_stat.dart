@@ -1,7 +1,7 @@
 // lib/core/domain/entities/app_usage_stat.dart
 
 import 'package:flutter/foundation.dart';
-import 'package:screenpledge/core/domain/entities/installed_app.dart';
+import 'installed_app.dart';
 
 /// A pure domain entity that pairs an [InstalledApp] with its usage duration.
 /// This is used to display the detailed breakdown on the dashboard.

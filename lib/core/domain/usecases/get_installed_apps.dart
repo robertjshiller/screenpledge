@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:screenpledge/core/di/service_providers.dart';
-import 'package:screenpledge/core/domain/entities/installed_app.dart';
-import 'package:screenpledge/core/services/screen_time_service.dart';
+import 'package:screen_time_channel/installed_app.dart';
+import 'package:screen_time_channel/screen_time_service.dart';
 
 /// Use case for fetching the list of all installed applications.
 class GetInstalledApps {

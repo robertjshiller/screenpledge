@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:screenpledge/core/services/android_screen_time_service.dart';
-import 'package:screenpledge/core/services/screen_time_service.dart';
+import 'package:screen_time_channel/screen_time_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// A Riverpod provider that determines which concrete implementation of

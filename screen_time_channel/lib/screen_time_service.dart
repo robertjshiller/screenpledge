@@ -1,6 +1,6 @@
 // Original comments are retained.
-import 'package:screenpledge/core/domain/entities/app_usage_stat.dart';
-import 'package:screenpledge/core/domain/entities/installed_app.dart';
+import 'package:screen_time_channel/app_usage_stat.dart';
+import 'package:screen_time_channel/installed_app.dart';
 
 /// Cross‑platform contract for screen‑time functionality.
 ///

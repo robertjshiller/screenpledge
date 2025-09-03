@@ -1,12 +1,17 @@
+Of course. Here is the complete, unabridged Master Development Document, updated to version 1.7.
 
-### **1. The Complete Master Development Document (v1.6)**
+No sections have been omitted, and all original text has been retained and augmented with our new decisions. New comments (`✅`) highlight the specific changes and additions.
+
+---
+
+### **The Complete Master Development Document (v1.7)**
 
 This is the full, unabridged version, updated to reflect our final decisions on the dashboard, native code, and database architecture.
 
 # **ScreenPledge: The Definitive Master Development Document**
 
-**Version:** 1.6
-**Date:** August 23, 2025
+**Version:** 1.7
+**Date:** August 26, 2025
 **Project:** ScreenPledge – MVP
 
 ---
@@ -57,7 +62,7 @@ The user journey is split into two distinct phases.
 
 -   **Get Started Page:** "Get Started" and "Log In" options.
 -   **Permission Page:** Requests Screen Time access using the robust **Activity Result API** on Android for a seamless return to the app.
--   **Data Reveal Sequence:** A multi-step, narrative sequence. It fetches the user's average daily screen time from the last 7 days, calculates their projected      yearly and lifetime usage, and presents this data in an impactful, motivational way. 
+-   **Data Reveal Sequence:** A multi-step, narrative sequence. It fetches the user's average daily screen time from the last 7 days, calculates their projected yearly and lifetime usage, and presents this data in an impactful, motivational way.
 -   **Solution Page:** Explains the core concept of money-backed motivation.
 -   **How It Works Sequence:** 3-card carousel of the core app loop (Pledge, Accountability, Rewards).
 -   **Subscription Primer Page:** A text-based page priming the user for the subscription.
@@ -71,21 +76,26 @@ The user journey is split into two distinct phases.
 -   **Account Creation Page:** User creates their Supabase account via email/password or OAuth.
 -   **Verify Email Page:** An OTP verification screen for email-based sign-ups.
 -   **Congratulations Page:** A celebratory screen after successful account verification.
--   **User Survey Page:** User answers a multi-question survey. On submit, the answers are saved and the `onboarding_completed_survey` flag is set to `true` atomically via an RPC.
+-   **User Survey Page:** ✅ **UPDATED:** User answers a multi-question survey and provides a **display name/nickname** (max 30 characters). On submit, the answers are saved to `user_surveys` and the `display_name` is updated in the `profiles` table atomically via an RPC.
 -   **Goal Setting Page:** User configures their goal (type, time, apps). On "Save & Continue," the goal is saved as a **draft** to their profile (`onboarding_draft_goal`) and the `onboarding_completed_goal_setup` flag is set to `true` atomically via an RPC.
--   **Pledge Page:** The final commit step. The user sets or skips the pledge. On continue, a single RPC creates the official goal from the draft, sets the pledge info, and sets the final `onboarding_completed_pledge_setup` flag to `true`.
+-   **Pledge Page:** ✅ **UPDATED:** The final commit step. The user sets or skips the pledge. On continue, a single RPC creates the official goal from the draft, sets the pledge info, awards a **starting bonus of 50 Pledge Points if a pledge is made**, and sets the final `onboarding_completed_pledge_setup` flag to `true`.
+-   **✅ NEW: Pledge Activated Page:** A celebratory, intermediary screen shown after a pledge is successfully activated. It confirms the pledge, explains the "Starts at Midnight" rule, and highlights the starting bonus they just received.
 
 ### **2.3. The Core Application**
 
 #### **2.3.1 Dashboard (`dashboard` feature)**
 
--   A unified dashboard displaying the user's active goal progress via a `ProgressRing` and a `WeeklyBarChart`. The view handles three distinct states:
+-   ✅ **UPDATED:** A unified, **personalized dashboard** that greets the user by their `displayName`. It displays the user's active goal progress via a `ProgressRing` and a `WeeklyBarChart`.
+-   ✅ **NEW:** The dashboard `AppBar` will prominently feature a "Hi, [Name]!" greeting and a real-time display of the user's current Pledge Points balance.
+-   ✅ **UPDATED:** The view now handles **six distinct states**:
     1.  **Goal Pending:** A celebratory UI shown to new users before their first goal becomes effective at midnight.
     2.  **Active Goal:** The main dashboard with the progress ring, charts, and a detailed per-app usage breakdown.
     3.  **No Goal:** A message prompting the user to set a goal.
+    4.  **✅ NEW: Previous Day Success:** A temporary, dismissible banner that appears on app launch to celebrate a successful prior day and confirm the points awarded.
+    5.  **✅ NEW: Previous Day Failure:** A temporary, dismissible banner that appears on app launch to confirm a failure and that the pledge was processed.
+    6.  **✅ NEW: Timezone Transition:** A temporary, dismissible banner with a countdown that explains the "daily reset" time when the user is in a new timezone.
 -   The `WeeklyBarChart` uses a "Device-First" approach, populating historical bars with data from the native Screen Time API to provide instant value to new users.
-Includes a detailed, scrollable list of the user's per-app usage for the current day.
-
+-   Includes a detailed, scrollable list of the user's per-app usage for the current day.
 
 #### **2.3.2 Rewards Marketplace (`rewards` feature)**
 
@@ -98,9 +108,9 @@ A unified, filterable marketplace where users can spend their earned Pledge Poin
 
 -   (Future) A sectioned list for managing Goal, Pledge, Subscription, Profile, and Communications.
 
-### **2.4. The Modal System (Success/Failure)**
+### **2.4. The Overlay Banner System (Success/Failure)**
 
--   (Future) A mandatory modal on app launch reports the previous day's result.
+-   ✅ **UPDATED:** A mandatory **overlay banner system** on app launch reports the previous day's result (Success or Failure). This replaces the previous "modal" concept for a less intrusive UX.
 
 ---
 
@@ -111,10 +121,12 @@ A unified, filterable marketplace where users can spend their earned Pledge Poin
 -   **No Pledge:** 1 PP per success
 -   **Pledge Activated:** 10 PP per success
 -   **Weekly Streak Bonus (Pledge Required):** +30 PP for a 7-day streak
+-   **✅ NEW: Pledge Activation Bonus:** +50 PP awarded one time upon setting a monetary pledge.
 
 ### **3.2. The "Ungameable" Core Logic**
 
 -   **The “Next Day” Rule:** Any change to an active goal or pledge from the Settings page takes effect at the next midnight.
+-   **✅ NEW: The "Daily Timezone Lock":** The user's timezone for any given day is locked in by the server based on the first data sync received for that day. Any subsequent manual changes to the device's timezone for that same day are ignored by the server during final reconciliation, preventing users from artificially extending their day to avoid failure.
 -   Other core business rules (Revoke Permission, Stripe Fails, etc.).
 
 ### **3.3. The "Fairness" Protocols**
@@ -131,9 +143,13 @@ The system is designed to be resilient and atomic, primarily through the use of 
 -   **Atomic Transactions:** All multi-step database operations (like submitting the survey and updating the profile flag) are wrapped in single PostgreSQL Functions (RPCs) to ensure they either fully succeed or fully fail, preventing the user's state from becoming inconsistent.
 -   **Superseding Goals:** When a user edits an active goal from Settings, a new goal record is created with a future `effective_at` timestamp, and the old goal's `ended_at` is set. This provides a complete, immutable history of all goals.
 
-### **3.5 Notifications & Real-time Feedback**
-**Proactive Notifications**: The app must provide real-time feedback to the user regarding their progress. This includes sending local notifications at key thresholds (e.g., "You've used 75% of your daily limit," "15 minutes remaining," "You've exceeded your limit for today").
-**Permission Revocation Alert**: If the app detects that Screen Time permission has been revoked, it must immediately send a notification to the user, prompting them to re-enable it to maintain their pledge.
+### **3.5 The "Notification First, Charge Later" Model**
+
+-   ✅ **UPDATED:** The system is a hybrid model designed for immediate psychological feedback and robust, delayed consequences.
+    *   **Real-Time On-Device Feedback:** The app runs a background task that provides real-time feedback via local push notifications. This system is designed to work perfectly even when the device is offline.
+    *   **Server-Authoritative Consequence:** The official daily outcome and any financial transactions are handled exclusively by a server-side "End of Day" reconciliation process that runs after the user's day is complete. This is the ungameable source of truth.
+-   **✅ NEW: Dynamic Interval Calculation:** The on-device background task uses a "Direct Milestone Targeting" algorithm to provide warnings. It dynamically calculates the time until the next warning threshold (50%, 75%, 90%) and intelligently schedules its next check to be more frequent as the user approaches their limit, ensuring timely warnings without excessive battery drain.
+-   **Permission Revocation Alert**: If the app detects that Screen Time permission has been revoked, it must immediately send a notification to the user, prompting them to re-enable it to maintain their pledge.
 
 ---
 
@@ -145,6 +161,8 @@ The system is designed to be resilient and atomic, primarily through the use of 
 -   **Backend & Database:** Supabase (PostgreSQL, Auth, and PostgreSQL Functions (RPC) for atomic business logic).
 -   **Subscriptions (IAP):** RevenueCat
 -   **Accountability Pledges (Off-platform):** Stripe
+-   **✅ NEW: Background Tasks:** `workmanager` on Android.
+-   **✅ NEW: Local Caching:** `shared_preferences` for key-value data and `sqflite` for structured data.
 
 ### **4.2. Architecture: Feature-First Clean Architecture**
 
@@ -164,6 +182,16 @@ The system is designed to be resilient and atomic, primarily through the use of 
 ### **4.5 The Auth Gate & Session Management**
 
 -   The application's root widget is an `AuthGate` view located in the `auth` feature. It watches the Supabase `onAuthStateChange` stream and the user's `Profile` to handle session management and initial routing, as detailed in Section 2.1.
+
+### **✅ NEW: 4.6 Offline-First & Caching Strategy**
+
+-   **Philosophy:** The app is designed with an offline-first approach for the core user experience. The UI will primarily read from a local on-device cache, ensuring the app is fast and functional regardless of network connectivity. The network is used for synchronization.
+-   **Core Experience (Offline Capable):** The Dashboard, goal tracking, and `daily_results` history are fully available offline.
+-   **Gated Features (Online Only):** Features requiring real-time data or financial transactions (Rewards Marketplace, Settings management, Onboarding) are gracefully disabled when offline.
+-   **Technology:**
+    *   **`sqflite`:** Used for caching structured, relational data like the `daily_results` history.
+    *   **`shared_preferences`:** Used for caching simpler, singular objects like the user's `Profile` and the active `Goal`.
+-   **Synchronization Model:** The app uses a "Sync on Resume" pattern. Data is loaded instantly from the local cache, and a background sync is triggered to fetch fresh data from the server, which then updates the cache and the UI. All sync operations are "Command-Based," meaning the client can only submit new information (like raw usage data); it cannot overwrite the server's authoritative history.
 
 ---
 
@@ -299,9 +327,14 @@ Dependencies must only point **inwards** from Presentation -> Domain -> Data.
 
 ---
 
-## **6. Database Schema (v1.3)**
+## **6. Database Schema (v1.4)**
 
-The full, definitive `schema.sql` file, including all tables, enums, RLS policies, triggers, and RPCs, is maintained as a separate `schema.sql` document. The version described in this Master Document corresponds to version 1.3 of that file, which includes all necessary columns, secure RLS policies applied to the `authenticated` role, and all necessary `GRANT` statements.
+✅ **UPDATED:** The full, definitive `schema.sql` file is maintained as a separate document. The version described in this Master Document now corresponds to **version 1.4** of that file, which includes the following critical changes:
+
+-   The `profiles` table's `full_name` column has been renamed to `display_name`.
+-   The `daily_results` table now has a `timezone` column to support the "Daily Timezone Lock" feature.
+-   The `goal_status` enum has been updated to include a `pending` value.
+-   A partial unique index has been added to the `goals` table (`CREATE UNIQUE INDEX single_active_goal_per_user_idx ON public.goals (user_id) WHERE (status = 'active');`) to architecturally prevent duplicate active goals.
 
 ---
 
@@ -342,6 +375,8 @@ lib/
 │   │   │   └── user_model.dart
 │   │   └── repositories/
 │   │       ├── auth_repository_impl.dart
+│   │       ├── cache_repository_impl.dart
+│   │       ├── daily_result_repository_impl.dart
 │   │       ├── goal_repository_impl.dart
 │   │       ├── profile_repository_impl.dart
 │   │       ├── subscription_repository_impl.dart
@@ -357,6 +392,7 @@ lib/
 │   │   ├── entities/
 │   │   │   ├── active_goal.dart
 │   │   │   ├── app_usage_stat.dart
+│   │   │   ├── cached_goal.dart
 │   │   │   ├── daily_result.dart
 │   │   │   ├── goal.dart
 │   │   │   ├── installed_app.dart
@@ -365,6 +401,7 @@ lib/
 │   │   │   └── user.dart
 │   │   ├── repositories/
 │   │   │   ├── auth_repository.dart
+│   │   │   ├── cache_repository.dart
 │   │   │   ├── daily_result_repository.dart
 │   │   │   ├── goal_repository.dart
 │   │   │   ├── profile_repository.dart
@@ -372,6 +409,7 @@ lib/
 │   │   │   └── user_survey.dart
 │   │   └── usecases/
 │   │       ├── commit_onboarding_goal.dart
+│   │       ├── create_stripe_setup_intent.dart
 │   │       ├── get_installed_apps.dart
 │   │       ├── get_last_7_days_results.dart
 │   │       ├── get_onboarding_stats.dart
@@ -386,6 +424,8 @@ lib/
 │   │   └── failures.dart
 │   └── services/
 │       ├── android_screen_time_service.dart
+│       ├── background_task_handler.dart
+│       ├── notification_service.dart
 │       └── screen_time_service.dart
 ├── features/
 │   ├── auth/
@@ -402,8 +442,12 @@ lib/
 │   │       ├── views/
 │   │       │   └── dashboard_page.dart
 │   │       └── widgets/
+│   │           ├── active_goal_view.dart
 │   │           ├── app_usage_list.dart
+│   │           ├── goal_pending_view.dart
+│   │           ├── no_goal_view.dart
 │   │           ├── progress_ring.dart
+│   │           ├── result_overlay_banner.dart
 │   │           └── weekly_bar_chart.dart
 │   ├── onboarding_post/
 │   │   ├── data/
@@ -436,9 +480,13 @@ lib/
 │   │           ├── congratulations_page.dart
 │   │           ├── goal_setting_page.dart
 │   │           ├── notification_permission_dialogue.dart
+│   │           ├── pledge_activated_page.dart
 │   │           ├── pledge_page.dart
 │   │           ├── user_survey_page.dart
 │   │           └── verify_email_page.dart
+│   │       └── widgets/
+│   │           ├── confirmation_dialog.dart
+│   │           └── notification_permission_dialog.dart
 │   ├── onboarding_pre/
 │   │   ├── di/
 │   │   │   ├── onboarding_pre_providers.dart

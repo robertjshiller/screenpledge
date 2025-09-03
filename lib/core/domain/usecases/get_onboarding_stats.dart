@@ -1,7 +1,7 @@
 import 'dart:math';
 
 import 'package:screenpledge/core/domain/entities/onboarding_stats.dart';
-import 'package:screenpledge/core/services/screen_time_service.dart';
+import 'package:screen_time_channel/screen_time_service.dart';
 
 /// A use case dedicated to calculating screen time stats for the onboarding reveal sequence.
 class GetOnboardingStatsUseCase {

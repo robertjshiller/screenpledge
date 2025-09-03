@@ -3,7 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:screenpledge/core/config/theme/app_colors.dart';
-import 'package:screenpledge/core/domain/entities/installed_app.dart';
+import 'package:screen_time_channel/installed_app.dart';
 import 'package:screenpledge/features/onboarding_post/presentation/viewmodels/app_selection_viewmodel.dart';
 
 /// A reusable, full-screen modal page for selecting applications.

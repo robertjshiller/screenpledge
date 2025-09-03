@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:screenpledge/core/domain/entities/installed_app.dart';
+import 'package:screen_time_channel/installed_app.dart';
 import 'package:screenpledge/core/domain/usecases/get_installed_apps.dart';
 import 'package:screenpledge/core/domain/usecases/get_usage_top_apps.dart';
 

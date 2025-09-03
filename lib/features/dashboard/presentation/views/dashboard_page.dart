@@ -1,12 +1,6 @@
-// lib/features/dashboard/presentation/views/dashboard_page.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:screenpledge/core/common_widgets/bottom_nav_bar.dart';
-import 'package:screenpledge/core/config/theme/app_colors.dart';
-// ✅ NEW: Import workmanager to manually trigger the task.
-import 'package:workmanager/workmanager.dart';
-// ✅ NEW: Import the background task handler to get the task name.
 import 'package:screenpledge/core/services/background_task_handler.dart';
 import 'package:screenpledge/features/dashboard/presentation/viewmodels/dashboard_viewmodel.dart';
 import 'package:screenpledge/features/dashboard/presentation/widgets/active_goal_view.dart';
@@ -72,29 +66,44 @@ class DashboardPage extends ConsumerWidget {
       bottomNavigationBar: BottomNavBar(
         currentIndex: 0,
         onTap: (index) {
+          // TODO: Implement navigation for bottom nav bar
           debugPrint('Bottom nav tapped, index: $index');
         },
       ),
-      // ✅ NEW: A temporary FloatingActionButton for diagnostics.
-      // This button will allow us to manually trigger the background task on demand.
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // Show a snackbar to confirm the button was pressed.
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Forcing warning task to run now...')),
-          );
-          print("--- DEBUG: Manually triggering warningNotificationTask ---");
-          // Use workmanager to register a one-off task that runs immediately.
-          Workmanager().registerOneOffTask(
-            "manualWarningTask-${DateTime.now().millisecondsSinceEpoch}", // A unique name for this specific trigger.
-            warningNotificationTask, // The name of the task we want to run.
-            initialDelay: Duration.zero, // Run immediately.
-            existingWorkPolicy: ExistingWorkPolicy.replace,
-            constraints: Constraints(networkType: NetworkType.notRequired),
-          );
-        },
-        backgroundColor: Colors.red,
-        child: const Icon(Icons.bug_report),
+      // ✅ UPDATED: A Column of FloatingActionButtons for diagnostics.
+      floatingActionButton: Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          // Button to trigger the real-time warning notification task.
+          FloatingActionButton(
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Triggering WARNING task! Check Logcat.')),
+              );
+              BackgroundTaskScheduler.triggerWarningTaskNow();
+            },
+            backgroundColor: Colors.red,
+            tooltip: 'Debug: Trigger Warning Worker',
+            heroTag: 'debug_warning_worker', // Add unique heroTags to prevent errors
+            child: const Icon(Icons.bug_report),
+          ),
+
+          const SizedBox(height: 16), // A little space between buttons
+
+          // Button to trigger the end-of-day data submission task.
+          FloatingActionButton(
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Triggering SUBMISSION task! Check Logcat & Supabase.')),
+              );
+              BackgroundTaskScheduler.triggerSubmissionTaskNow();
+            },
+            backgroundColor: Colors.blue,
+            tooltip: 'Debug: Trigger Submission Worker',
+            heroTag: 'debug_submission_worker', // Add unique heroTags to prevent errors
+            child: const Icon(Icons.cloud_upload),
+          ),
+        ],
       ),
     );
   }

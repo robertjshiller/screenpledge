@@ -6,7 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:screenpledge/core/common_widgets/primary_button.dart';
 import 'package:screenpledge/core/config/theme/app_colors.dart';
 import 'package:screenpledge/core/di/profile_providers.dart';
-import 'package:screenpledge/core/domain/entities/installed_app.dart';
+import 'package:screen_time_channel/installed_app.dart';
 import 'package:screenpledge/features/onboarding_post/presentation/viewmodels/goal_setting_viewmodel.dart';
 import 'package:screenpledge/features/onboarding_post/presentation/views/app_selection_page.dart';
 import 'package:screenpledge/features/onboarding_post/presentation/views/pledge_page.dart';

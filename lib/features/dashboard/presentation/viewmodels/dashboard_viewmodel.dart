@@ -13,8 +13,8 @@ import 'package:screenpledge/core/domain/entities/profile.dart';
 import 'package:screenpledge/core/domain/repositories/daily_result_repository.dart';
 import 'package:screenpledge/core/domain/repositories/goal_repository.dart';
 import 'package:screenpledge/core/domain/repositories/profile_repository.dart';
-import 'package:screenpledge/core/services/screen_time_service.dart';
-import 'package:screenpledge/core/domain/entities/app_usage_stat.dart';
+import 'package:screen_time_channel/screen_time_service.dart';
+import 'package:screen_time_channel/app_usage_stat.dart';
 
 /// The state object for the dashboard.
 @immutable

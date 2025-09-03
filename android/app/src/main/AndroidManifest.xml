@@ -1,24 +1,12 @@
-<!-- // File: android/app/src/main/AndroidManifest.xml -->
+<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     package="com.screenpledge.app">
 
-    <!-- This permission is for the UsageStatsManager -->
-    <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS"
-        tools:ignore="ProtectedPermissions" />
-
-    <!-- ✅ NEW: Required for Android 13 (API 33) and above to post notifications. -->
-    <!-- This permission will be requested from the user at runtime. -->
+    <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS" tools:ignore="ProtectedPermissions" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
-
-    <!-- ✅ NEW: Required for older Android versions to ensure that scheduled -->
-    <!-- notifications are rescheduled correctly after the device reboots. -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
 
-
-    <!-- ✅ ADDED: This is the new, critical part for Package Visibility. -->
-    <!-- This tag declares that our app has a legitimate need to query for other apps -->
-    <!-- that have a main launchable activity. This is required for Android 11+ -->
     <queries>
         <intent>
             <action android:name="android.intent.action.MAIN" />
@@ -27,8 +15,8 @@
     </queries>
 
     <application
-        android:label="screenpledge"
         android:name="${applicationName}"
+        android:label="screenpledge"
         android:icon="@mipmap/ic_launcher">
         <activity
             android:name=".MainActivity"
@@ -38,10 +26,6 @@
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
             android:hardwareAccelerated="true"
             android:windowSoftInputMode="adjustResize">
-            <!-- Specifies an Android theme to apply to this Activity as soon as
-                 the Android process has started. This theme is visible to the user
-                 while the Flutter UI initializes. After that, this theme continues
-                 to determine the Window background behind the Flutter UI. -->
             <meta-data
               android:name="io.flutter.embedding.android.NormalTheme"
               android:resource="@style/NormalTheme"
@@ -51,8 +35,6 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
-        <!-- Don't delete the meta-data below.
-             This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />

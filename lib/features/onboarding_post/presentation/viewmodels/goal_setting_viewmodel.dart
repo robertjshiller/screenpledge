@@ -3,7 +3,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:screenpledge/core/di/profile_providers.dart';
 import 'package:screenpledge/core/domain/entities/goal.dart';
-import 'package:screenpledge/core/domain/entities/installed_app.dart';
+import 'package:screen_time_channel/installed_app.dart';
 import 'package:screenpledge/core/domain/usecases/save_goal_and_continue.dart';
 
 /// Manages the state and business logic for the GoalSettingPage.

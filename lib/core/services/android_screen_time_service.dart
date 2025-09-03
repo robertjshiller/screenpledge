@@ -2,9 +2,9 @@
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import 'package:screenpledge/core/domain/entities/app_usage_stat.dart';
-import 'package:screenpledge/core/domain/entities/installed_app.dart';
-import 'package:screenpledge/core/services/screen_time_service.dart';
+import 'package:screen_time_channel/app_usage_stat.dart';
+import 'package:screen_time_channel/installed_app.dart';
+import 'package:screen_time_channel/screen_time_service.dart';
 
 /// Android implementation that talks to the Kotlin side via a single platform
 /// channel: `com.screenpledge.app/screentime`.
